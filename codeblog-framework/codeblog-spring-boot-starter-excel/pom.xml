@@ -17,6 +17,12 @@
     </description>
 
     <dependencies>
+        <!-- Spring Boot Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        
         <!-- FastExcel -->
         <dependency>
             <groupId>cn.idev.excel</groupId>
@@ -29,10 +35,18 @@
             <artifactId>velocity-engine-core</artifactId>
         </dependency>
         
-        <!-- Spring Boot Starter -->
+        <!-- Servlet API -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
         </dependency>
         
         <!-- Spring Boot Configuration Processor -->
@@ -41,6 +55,14 @@
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
+        
+        <!-- Common Core 组件 -->
+        <dependency>
+            <groupId>site.codeblog.cloud</groupId>
+            <artifactId>codeblog-common-core</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
     </dependencies>
 
 </project>

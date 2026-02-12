@@ -240,6 +240,12 @@
                 <version>${transmittable-thread-local.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>site.codeblog.cloud</groupId>
+                <artifactId>codeblog-spring-boot-starter-web</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
         </dependencies>
 
     </dependencyManagement>
