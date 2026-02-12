@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>site.codeblog.cloud</groupId>
+    <artifactId>codebolog-dependencies</artifactId>
+    <packaging>pom</packaging>
+    <version>2026.02</version>
+
+    <name>${project.artifactId}</name>
+    <description>基础 bom 文件，管理整个项目的依赖版本</description>
+
+    <properties>
+        <revision>2026.02</revision>
+        <flatten-maven-plugin.version>1.7.2</flatten-maven-plugin.version>
+        <!-- 统一依赖管理 -->
+        <spring.boot.version>3.5.9</spring.boot.version>
+        <spring.cloud.version>2025.0.0</spring.cloud.version>
+        <spring.cloud.alibaba.version>2023.0.3.3</spring.cloud.alibaba.version>
+        <!-- Web 相关 -->
+        <springdoc.version>2.8.14</springdoc.version>
+        <knife4j.version>4.5.0</knife4j.version>
+        <!-- 安全认证相关 -->
+        <sa-token.version>1.44.0</sa-token.version>
+        <!-- DB 相关 -->
+        <druid.version>1.2.27</druid.version>
+        <mybatis-flex.version>1.9.3</mybatis-flex.version>
+        <mybatis-plus-join.version>1.5.5</mybatis-plus-join.version>
+        <dynamic-datasource.version>4.5.0</dynamic-datasource.version>
+        <easy-trans.version>3.0.6</easy-trans.version>
+        <redisson.version>3.52.0</redisson.version>
+        <dm8.jdbc.version>8.1.3.140</dm8.jdbc.version>
+        <kingbase.jdbc.version>8.6.0</kingbase.jdbc.version>
+        <opengauss.jdbc.version>5.1.0</opengauss.jdbc.version>
+        <taos.version>3.7.9</taos.version>
+        <!-- 消息队列 -->
+        <rocketmq-spring.version>2.3.5</rocketmq-spring.version>
+        <!-- 网关相关 -->
+        <!--<spring-cloud-gateway.version>4.2.0</spring-cloud-gateway.version>-->
+        <!-- RPC 相关 -->
+        <!--<openfeign.version>4.2.0</openfeign.version>-->
+        <!-- Config 配置中心相关 -->
+        <!-- Job 定时任务相关 -->
+        <xxl-job.version>2.4.0</xxl-job.version>
+        <!-- 服务保障相关 -->
+        <lock4j.version>2.2.7</lock4j.version>
+        <!-- 监控相关 -->
+        <skywalking.version>9.5.0</skywalking.version>
+        <spring-boot-admin.version>3.5.6</spring-boot-admin.version>
+        <opentracing.version>0.33.0</opentracing.version>
+        <!-- Test 测试相关 -->
+        <podam.version>8.0.2.RELEASE</podam.version>
+        <jedis-mock.version>1.1.12</jedis-mock.version>
+        <mockito-inline.version>5.2.0</mockito-inline.version>
+        <!-- Bpm 工作流相关 -->
+        <flowable.version>7.2.0</flowable.version>
+        <!-- 工具类相关 -->
+        <anji-plus-captcha.version>1.4.0</anji-plus-captcha.version>
+        <jsoup.version>1.21.2</jsoup.version>
+        <lombok.version>1.18.42</lombok.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
+        <hutool-5.version>5.8.42</hutool-5.version>
+        <hutool-6.version>6.0.0-M22</hutool-6.version>
+        <fastexcel.version>1.3.0</fastexcel.version>
+        <velocity.version>2.4.1</velocity.version>
+        <fastjson.version>1.2.83</fastjson.version>
+        <guava.version>33.5.0-jre</guava.version>
+        <transmittable-thread-local.version>2.14.5</transmittable-thread-local.version>
+        <commons-net.version>3.12.0</commons-net.version>
+        <commons-lang3.version>3.20.0</commons-lang3.version>
+        <jsch.version>2.27.7</jsch.version>
+        <tika-core.version>3.2.3</tika-core.version>
+        <ip2region.version>2.7.0</ip2region.version>
+        <!-- 文件上传相关 -->
+        <commons-fileupload.version>1.5</commons-fileupload.version>
+        <bizlog-sdk.version>3.0.6</bizlog-sdk.version>
+        <reflections.version>0.10.2</reflections.version>
+        <netty.version>4.2.9.Final</netty.version>
+        <mqtt.version>1.2.5</mqtt.version>
+        <vertx.version>4.5.22</vertx.version>
+        <okhttp.version>4.12.0</okhttp.version>
+        <californium.version>3.12.0</californium.version>
+        <!-- 三方云服务相关 -->
+        <awssdk.version>2.40.15</awssdk.version>
+        <justauth.version>1.16.7</justauth.version>
+        <justauth-starter.version>1.4.0</justauth-starter.version>
+        <jimureport.version>2.1.3</jimureport.version>
+        <jimubi.version>2.3.0</jimubi.version>
+        <weixin-java.version>4.7.9-20251224.161447</weixin-java.version>
+        <alipay-sdk-java.version>4.40.607.ALL</alipay-sdk-java.version>
+    </properties>
+
+    <dependencyManagement>
+
+        <dependencies>
+
+            <!-- Spring Boot 相关-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring.boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring Cloud 相关 -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring.cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            
+            <!-- Spring Cloud Alibaba 相关 -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring.cloud.alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            
+            <!-- Nacos Discovery -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+                <version>${spring.cloud.alibaba.version}</version>
+            </dependency>
+            
+            <!-- Nacos Config -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+                <version>${spring.cloud.alibaba.version}</version>
+            </dependency>
+            
+            <!-- Sa-Token 权限认证 -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-spring-boot3-starter</artifactId>
+                <version>${sa-token.version}</version>
+            </dependency>
+
+            <!-- Sa-Token 整合 RedisTemplate -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-redis-template</artifactId>
+                <version>${sa-token.version}</version>
+            </dependency>
+
+            <!-- Sa-Token插件：权限缓存与业务缓存分离 -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-alone-redis</artifactId>
+                <version>${sa-token.version}</version>
+            </dependency>
+
+            <!-- Sa-Token 整合 SpringAOP 实现注解鉴权 -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-spring-aop</artifactId>
+                <version>${sa-token.version}</version>
+            </dependency>
+
+            <!-- MyBatis-Flex -->
+            <dependency>
+                <groupId>com.mybatis-flex</groupId>
+                <artifactId>mybatis-flex-spring-boot3-starter</artifactId>
+                <version>${mybatis-flex.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.mybatis-flex</groupId>
+                <artifactId>mybatis-flex-processor</artifactId>
+                <version>${mybatis-flex.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            
+            <!-- 数据库相关 -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>druid-spring-boot-3-starter</artifactId>
+                <version>${druid.version}</version>
+            </dependency>
+            
+            <!-- Redis 相关 -->
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson-spring-boot-starter</artifactId>
+                <version>${redisson.version}</version>
+            </dependency>
+            
+            <!-- Web 相关 -->
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+                <version>${knife4j.version}</version>
+            </dependency>
+            
+            <!-- 工具类相关 -->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>${hutool-5.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.apache.velocity</groupId>
+                <artifactId>velocity-engine-core</artifactId>
+                <version>${velocity.version}</version>
+            </dependency>
+            
+            <!-- Excel 处理 -->
+            <dependency>
+                <groupId>cn.idev.excel</groupId>
+                <artifactId>fastexcel</artifactId>
+                <version>${fastexcel.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+            
+            <!-- Apache Commons FileUpload -->
+            <dependency>
+                <groupId>commons-fileupload</groupId>
+                <artifactId>commons-fileupload</artifactId>
+                <version>${commons-fileupload.version}</version>
+            </dependency>
+            
+            <!-- Transmittable Thread Local -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>transmittable-thread-local</artifactId>
+                <version>${transmittable-thread-local.version}</version>
+            </dependency>
+
+        </dependencies>
+
+    </dependencyManagement>
+
+</project>

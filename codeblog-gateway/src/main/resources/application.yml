@@ -1,0 +1,31 @@
+server:
+  port: 9999
+
+spring:
+  application:
+    name: codeblog-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: 56b31109-6df4-4a89-bd3a-291eb017f54c
+      config:
+        server-addr: 127.0.0.1:8848
+        file-extension: yaml
+        namespace: 56b31109-6df4-4a89-bd3a-291eb017f54c
+    gateway:
+      server:
+        webflux:
+          routes:
+            # 示例路由配置
+            - id: user-service
+              uri: lb://user-service
+              predicates:
+                - Path=/user/**
+              filters:
+                - StripPrefix=1
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
