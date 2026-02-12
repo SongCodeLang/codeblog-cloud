@@ -17,6 +17,12 @@
     </description>
 
     <dependencies>
+        <!-- Common Core -->
+        <dependency>
+            <groupId>site.codeblog.cloud</groupId>
+            <artifactId>codeblog-common-core</artifactId>
+        </dependency>
+        
         <!-- Spring Boot Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -41,6 +47,7 @@
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
+
     </dependencies>
 
 </project>

@@ -26,7 +26,7 @@
         <sa-token.version>1.44.0</sa-token.version>
         <!-- DB 相关 -->
         <druid.version>1.2.27</druid.version>
-        <mybatis-flex.version>1.9.3</mybatis-flex.version>
+        <mybatis-flex.version>1.11.6</mybatis-flex.version>
         <mybatis-plus-join.version>1.5.5</mybatis-plus-join.version>
         <dynamic-datasource.version>4.5.0</dynamic-datasource.version>
         <easy-trans.version>3.0.6</easy-trans.version>
@@ -168,15 +168,10 @@
             <!-- MyBatis-Flex -->
             <dependency>
                 <groupId>com.mybatis-flex</groupId>
-                <artifactId>mybatis-flex-spring-boot3-starter</artifactId>
+                <artifactId>mybatis-flex-dependencies</artifactId>
                 <version>${mybatis-flex.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.mybatis-flex</groupId>
-                <artifactId>mybatis-flex-processor</artifactId>
-                <version>${mybatis-flex.version}</version>
-                <scope>provided</scope>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             
             <!-- 数据库相关 -->
@@ -243,6 +238,12 @@
             <dependency>
                 <groupId>site.codeblog.cloud</groupId>
                 <artifactId>codeblog-spring-boot-starter-web</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>site.codeblog.cloud</groupId>
+                <artifactId>codeblog-common-core</artifactId>
                 <version>${revision}</version>
             </dependency>
 

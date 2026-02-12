@@ -25,7 +25,6 @@
     </description>
 
     <modules>
-        <module>codeblog-spring-boot-starter-banner</module>
         <module>codeblog-spring-boot-starter-mybatis</module>
         <module>codeblog-spring-boot-starter-redis</module>
         <module>codeblog-spring-boot-starter-security</module>

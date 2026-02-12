@@ -17,12 +17,7 @@
     </description>
 
     <dependencies>
-        <!-- Spring Boot Starter -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-        </dependency>
-        
+
         <!-- FastExcel -->
         <dependency>
             <groupId>cn.idev.excel</groupId>
@@ -61,6 +56,11 @@
             <groupId>site.codeblog.cloud</groupId>
             <artifactId>codeblog-common-core</artifactId>
             <version>${revision}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>site.codeblog.cloud</groupId>
+            <artifactId>codeblog-spring-boot-starter-web</artifactId>
         </dependency>
 
     </dependencies>

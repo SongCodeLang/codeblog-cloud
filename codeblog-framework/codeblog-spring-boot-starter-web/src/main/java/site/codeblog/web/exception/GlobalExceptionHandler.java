@@ -1,4 +1,4 @@
-package site.codeblog.common.core.exception;
+package site.codeblog.web.exception;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -8,6 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import site.codeblog.common.core.exception.BusinessException;
 import site.codeblog.common.core.result.Result;
 
 import java.util.stream.Collectors;
