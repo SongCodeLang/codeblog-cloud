@@ -1,114 +1,149 @@
 # CodeBlog Cloud 微服务架构平台
 
-基于 Spring Boot 3 + Spring Cloud 的现代化微服务架构平台，采用模块化设计，提供企业级微服务解决方案。
+基于 Spring Boot 3 + Spring Cloud 的现代化微服务架构平台，采用模块化设计，提供企业级微服务解决方案，并配套 React + TypeScript 管理后台前端。
 
 ## 🏗️ 技术架构概览
 
-### 核心框架版本
+### 版本兼容矩阵（重要）
 
-| 组件类别 | 框架名称 | 版本号 | 用途说明 |
-|---------|---------|--------|----------|
-| **核心框架** | Java | 17 | 运行环境 |
-| **核心框架** | Spring Boot | 3.5.9 | 微服务基础框架 |
-| **核心框架** | Spring Cloud | 2025.0.0 | 微服务治理框架 |
-| **核心框架** | Spring Cloud Alibaba | 2023.0.3.3 | 阿里云微服务组件 |
+| 组件 | 版本 | 说明 |
+|------|------|------|
+| Java | 17 | 运行环境 |
+| Spring Boot | 3.5.16 | 微服务基础框架 |
+| Spring Cloud | 2025.0.3 | 微服务治理框架 |
+| Spring Cloud Alibaba | 2025.0.0.0 | 与 Spring Cloud 2025.0.x / Boot 3.5.x 严格配套 |
 
-### 安全认证框架
+### 后端技术栈
 
-| 框架名称 | 版本号 | 主要功能 |
-|---------|--------|----------|
-| Sa-Token | 1.44.0 | 权限认证、会话管理、路由拦截 |
+| 类别 | 框架 | 版本 | 用途 |
+|------|------|------|------|
+| 安全认证 | Sa-Token | 1.46.0 | 登录认证、会话管理、网关统一鉴权（Redis 共享会话） |
+| 数据访问 | MyBatis-Flex | 1.11.8 | ORM（逻辑删除 / 乐观锁 / SQL 审计） |
+| 数据访问 | Druid | 1.2.28 | 数据库连接池 |
+| 缓存 | Redisson + Spring Data Redis | 4.8.0 | 分布式缓存、锁 |
+| RPC | OpenFeign | 随 Spring Cloud | 声明式 HTTP 客户端（认证头 / 链路透传） |
+| 网关 | Spring Cloud Gateway | 随 Spring Cloud | 路由转发、统一鉴权、CORS |
+| 文档 | Knife4j / SpringDoc | 4.5.0 / 2.8.x | OpenAPI 3 文档 |
+| 工具 | Hutool / Lombok / MapStruct | 5.8.48 / 1.18.42 / 1.6.3 | 工具集 / 简化代码 / 对象映射 |
+| Excel | FastExcel | 1.3.0 | Excel 导入导出 |
 
-### 数据访问框架
+### 前端技术栈（codeblog-ui）
 
-| 框架名称 | 版本号 | 主要功能 |
-|---------|--------|----------|
-| MyBatis-Flex | 1.9.3 | ORM 框架，数据库访问 |
-| Druid | 1.2.27 | 数据库连接池 |
-| Redisson | 3.52.0 | Redis 客户端，分布式锁 |
+| 类别 | 技术 | 版本 |
+|------|------|------|
+| 框架 | React + TypeScript | 19.3 / 5.9 |
+| 构建 | Vite | 8.x |
+| UI | Ant Design + @ant-design/icons | 6.x |
+| 路由 | React Router | 8.x（懒加载 + 登录守卫） |
+| 服务端状态 | TanStack React Query | 5.x |
+| 客户端状态 | Zustand（持久化登录态） | 5.x |
+| HTTP | Axios（Result 解包 / 401 拦截） | 1.x |
 
-### RPC 通信框架
-
-| 框架名称 | 版本号 | 主要功能 |
-|---------|--------|----------|
-| OpenFeign | 4.2.0 | 声明式 HTTP 客户端 |
-
-### 网关组件
-
-| 框架名称 | 版本号 | 主要功能 |
-|---------|--------|----------|
-| Spring Cloud Gateway | 4.2.0 | API 网关，路由转发 |
-
-### 工具类库
-
-| 框架名称 | 版本号 | 主要功能 |
-|---------|--------|----------|
-| Hutool | 5.8.42 | Java 工具类集合 |
-| Lombok | 1.18.42 | 简化 Java 代码 |
-| MapStruct | 1.6.3 | 对象映射转换 |
-| FastExcel | 1.3.0 | Excel 处理 |
-| Apache Velocity | 2.4.1 | 模板引擎 |
-
-### 文档与监控
-
-| 框架名称 | 版本号 | 主要功能 |
-|---------|--------|----------|
-| Knife4j | 4.5.0 | Swagger 增强 UI |
-| SpringDoc | 2.8.14 | OpenAPI 3 文档生成 |
-
-### 构建与部署
-
-| 工具名称 | 版本 | 主要功能 |
-|---------|------|----------|
-| Maven | 3.9+ | 项目构建管理 |
-| Flatten Maven Plugin | 1.7.2 | 版本扁平化处理 |
-
-## 📁 项目模块结构
+## 📁 项目结构
 
 ```
 codeblog-cloud/
-├── codebolog-dependencies/     # 依赖版本管理中心
-├── codeblog-framework/         # 服务组件封装
-│   ├── codeblog-spring-boot-starter-banner/    # 启动 Banner 组件
-│   ├── codeblog-spring-boot-starter-mybatis/   # 数据库访问组件
-│   ├── codeblog-spring-boot-starter-redis/     # Redis 缓存组件
-│   ├── codeblog-spring-boot-starter-security/  # 安全认证组件
-│   ├── codeblog-spring-boot-starter-web/       # Web 基础组件
-│   ├── codeblog-spring-boot-starter-excel/     # Excel 处理组件
-│   ├── codeblog-spring-boot-starter-file/      # 文件上传组件
-│   ├── codeblog-spring-boot-starter-rpc/       # RPC 调用组件
-│   └── codeblog-common/                        # 公共组件
-│       ├── codeblog-common-core/               # 核心公共组件
-│       └── codeblog-common-util/               # 工具类组件
-└── codeblog-gateway/           # API 网关服务
+├── codeblog-dependencies/       # 依赖版本管理中心（bom）
+├── codeblog-framework/          # 技术组件封装
+│   ├── codeblog-spring-boot-starter-banner/     # 启动 Banner
+│   ├── codeblog-spring-boot-starter-web/        # Web 基础（全局异常/Result/Jackson Long→String）
+│   ├── codeblog-spring-boot-starter-mybatis/    # MyBatis-Flex 封装
+│   ├── codeblog-spring-boot-starter-redis/      # Redis 封装（RedisTemplate + RedisCache）
+│   ├── codeblog-spring-boot-starter-security/   # Sa-Token 封装（LoginUser/LoginHelper/拦截器）
+│   ├── codeblog-spring-boot-starter-rpc/        # OpenFeign 封装（请求透传/日志级别）
+│   ├── codeblog-spring-boot-starter-excel/      # Excel 工具库
+│   ├── codeblog-spring-boot-starter-file/       # 文件工具库
+│   └── codeblog-common/          # 公共组件（core: Result/错误码/分页模型, util: 上下文工具）
+├── codeblog-gateway/            # API 网关（Sa-Token Reactor 统一鉴权 + CORS）
+├── codeblog-user/               # 用户服务（认证 + 用户管理，spring.application.name=user-service）
+├── codeblog-ui/                 # 管理后台前端（React + TS + AntD）
+├── docker/docker-compose.yml    # 基础设施编排（MySQL + Redis + Nacos）
+└── pom.xml
 ```
 
 ## 🚀 快速开始
 
 ### 环境要求
-- JDK 17+
-- Maven 3.9+
-- Redis 6.0+
 
-### 构建项目
+- JDK 17+、Maven 3.9+
+- MySQL 8.x、Redis 7.x（本机安装或使用 `docker/docker-compose.yml`）
+- Nacos 2.x（可选：使用 `local` profile 可跳过）
+- Node.js 20+（前端）
+
+### 1. 启动基础设施
+
+方式 A —— Docker 一键编排（含数据库自动初始化）：
+
 ```bash
-# 克隆项目
-git clone <repository-url>
+cd docker
+docker compose up -d
+```
 
-# 进入项目目录
-cd codeblog-cloud
+方式 B —— 本机服务：启动 MySQL 与 Redis，然后导入初始化 SQL：
 
-# 清理并构建
+```bash
+mysql -uroot -p < codeblog-user/sql/init.sql
+```
+
+### 2. 构建后端
+
+```bash
 mvn clean install -DskipTests
 ```
 
-## 📖 文档说明
+### 3. 启动服务（二选一）
 
-本 README 仅展示项目当前使用的技术框架及版本信息，完整使用文档将在后续完善。
+**本地联调（无需 Nacos，推荐开发时使用）：**
+
+```bash
+# 用户服务（端口 48081）
+java -jar codeblog-user/target/codeblog-user-2026.02.jar --spring.profiles.active=local
+
+# 网关（端口 9999，路由直连本机服务）
+java -jar codeblog-gateway/target/codeblog-gateway-2026.02.jar --spring.profiles.active=local
+```
+
+**注册中心模式（默认 profile，需 Nacos 运行于 127.0.0.1:8848）：**
+
+```bash
+java -jar codeblog-user/target/codeblog-user-2026.02.jar
+java -jar codeblog-gateway/target/codeblog-gateway-2026.02.jar
+```
+
+### 4. 启动前端
+
+```bash
+cd codeblog-ui
+npm install
+npm run dev          # http://localhost:5173（/user 代理到网关 9999）
+```
+
+### 5. 访问
+
+- 管理后台：<http://localhost:5173>，默认账号 `admin / admin123`
+- 用户服务 API 文档：<http://127.0.0.1:48081/doc.html>
+- 网关入口：<http://127.0.0.1:9999>（`/user/**` → 用户服务）
+
+## 🔐 认证与请求约定
+
+- 登录：`POST /user/auth/login` 返回 `token`
+- 后续请求携带请求头 `Authorization: Bearer <token>`（网关统一校验，Redis 共享会话）
+- 响应统一为 `Result<T>`：`{ code, message, data, timestamp }`，`code=200` 成功，`401` 未登录
+- 后端 `Long` 统一序列化为字符串，避免 JS 精度丢失（前端已适配）
+
+## 🔧 组件配置速查
+
+| 配置 | 说明 | 默认 |
+|------|------|------|
+| `codeblog.security.enabled` | 业务服务登录校验开关 | true |
+| `codeblog.security.excludes` | 登录校验白名单（Ant 风格） | - |
+| `codeblog.gateway.security.excludes` | 网关鉴权白名单 | 登录/文档/actuator |
+| `codeblog.gateway.cors.*` | 网关跨域配置 | `*` |
+| `codeblog.mybatis.audit-console-enabled` | SQL 控制台审计（仅开发） | false |
+| `codeblog.rpc.feign-log-level` | Feign 日志级别 | 关闭 |
+| `codeblog.banner.enabled` | 启动 Banner 开关 | true |
 
 ## 🔄 版本管理
 
-项目采用统一的版本管理策略：
-- 主版本号：`${revision}` (当前为 2026.02)
-- 所有子模块继承父项目版本
-- 通过 `codebolog-dependencies` 模块统一管理第三方依赖版本
+- 主版本号：`${revision}`（当前 2026.02），所有子模块统一继承，flatten-maven-plugin 扁平化
+- 第三方依赖版本统一在 `codeblog-dependencies/pom.xml` 管理，业务模块禁止硬编码版本

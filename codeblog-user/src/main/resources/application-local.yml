@@ -1,0 +1,11 @@
+# 本地联调配置：不依赖 Nacos
+# 启动方式：--spring.profiles.active=local
+spring:
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+        import-check:
+          enabled: false

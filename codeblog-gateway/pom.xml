@@ -13,7 +13,7 @@
     <artifactId>codeblog-gateway</artifactId>
 
     <description>
-        项目网关
+        API 网关：路由转发、统一鉴权（Sa-Token Reactor）、跨域处理
     </description>
 
 
@@ -23,29 +23,53 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
-        
+
         <!-- Spring Cloud LoadBalancer -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
-        
+
         <!-- Nacos Discovery -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
-        
+
         <!-- Nacos Config -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
         </dependency>
-        
+
         <!-- Bootstrap -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-bootstrap</artifactId>
+        </dependency>
+
+        <!-- Sa-Token 权限认证（WebFlux / Reactor 版，网关统一鉴权） -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-reactor-spring-boot3-starter</artifactId>
+        </dependency>
+
+        <!-- Sa-Token 整合 Redis（网关与服务共享会话） -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-redis-template</artifactId>
+        </dependency>
+
+        <!-- Redis -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- Common Core（统一 Result 响应） -->
+        <dependency>
+            <groupId>site.codeblog.cloud</groupId>
+            <artifactId>codeblog-common-core</artifactId>
         </dependency>
 
         <!-- Lombok -->
@@ -62,6 +86,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>repackage</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <excludes>
                         <exclude>

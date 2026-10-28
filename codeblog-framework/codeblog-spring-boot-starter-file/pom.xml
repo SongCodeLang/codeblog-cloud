@@ -13,41 +13,41 @@
     <packaging>jar</packaging>
 
     <description>
-        文件上传下载组件
+        文件上传下载工具组件（纯工具库，不注册任何 Web 端点）
     </description>
 
     <dependencies>
-        
-        <!-- Apache Commons FileUpload -->
-        <dependency>
-            <groupId>commons-fileupload</groupId>
-            <artifactId>commons-fileupload</artifactId>
-        </dependency>
-        
-        <!-- Servlet API -->
+
+        <!-- Servlet / Web（由使用方的 Web 环境提供） -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
-        
-        <!-- Spring Boot Configuration Processor -->
+
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <scope>provided</scope>
         </dependency>
-        
-        <!-- Common Core 组件 -->
+
+        <!-- Hutool（文件操作底层） -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Common Core 组件（统一异常体系） -->
         <dependency>
             <groupId>site.codeblog.cloud</groupId>
             <artifactId>codeblog-common-core</artifactId>
-            <version>${revision}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>site.codeblog.cloud</groupId>
-            <artifactId>codeblog-spring-boot-starter-web</artifactId>
         </dependency>
 
     </dependencies>

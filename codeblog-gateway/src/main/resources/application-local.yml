@@ -1,0 +1,21 @@
+# 本地联调配置：不依赖 Nacos，路由直连本机服务
+# 启动方式：--spring.profiles.active=local
+spring:
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+        import-check:
+          enabled: false
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: user-service
+              uri: http://127.0.0.1:48081
+              predicates:
+                - Path=/user/**
+              filters:
+                - StripPrefix=1

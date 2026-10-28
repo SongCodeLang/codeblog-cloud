@@ -13,17 +13,23 @@
     <packaging>jar</packaging>
 
     <description>
-        Sa-Token 权限认证组件
+        Sa-Token 权限认证组件（登录校验、会话管理、异常转换）
     </description>
 
     <dependencies>
+        <!-- Common Core（统一 Result / 错误码） -->
+        <dependency>
+            <groupId>site.codeblog.cloud</groupId>
+            <artifactId>codeblog-common-core</artifactId>
+        </dependency>
+
         <!-- Sa-Token 核心 -->
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-spring-boot3-starter</artifactId>
         </dependency>
 
-        <!-- Sa-Token 整合 RedisTemplate -->
+        <!-- Sa-Token 整合 RedisTemplate（分布式会话） -->
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-redis-template</artifactId>
@@ -39,21 +45,16 @@
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-alone-redis</artifactId>
+            <optional>true</optional>
         </dependency>
 
-        <!-- 提供 Redis 连接池 -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-pool2</artifactId>
-        </dependency>
-
-
-        <!-- Spring Boot Starter -->
+        <!-- Web 环境（拦截器依赖 Spring MVC，由使用方提供） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <optional>true</optional>
         </dependency>
-        
+
         <!-- Spring Boot Configuration Processor -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

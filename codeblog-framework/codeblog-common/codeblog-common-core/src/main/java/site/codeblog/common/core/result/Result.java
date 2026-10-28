@@ -97,7 +97,21 @@ public class Result<T> implements Serializable {
     public static <T> Result<T> fail(Integer code, String message) {
         return new Result<>(code, message);
     }
-    
+
+    /**
+     * 失败响应（基于全局错误码）
+     */
+    public static <T> Result<T> fail(GlobalErrorCode errorCode) {
+        return new Result<>(errorCode.getCode(), errorCode.getMessage());
+    }
+
+    /**
+     * 失败响应（基于全局错误码，覆盖提示消息）
+     */
+    public static <T> Result<T> fail(GlobalErrorCode errorCode, String message) {
+        return new Result<>(errorCode.getCode(), message);
+    }
+
     /**
      * 是否成功
      */

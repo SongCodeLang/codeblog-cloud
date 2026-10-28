@@ -3,6 +3,24 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Maven flatten plugin ###
+.flattened-pom.xml
+
+### Node / frontend ###
+node_modules/
+dist/
+*.local
+npm-debug.log*
+*.tsbuildinfo
+
+### 运行日志 ###
+*.log
+
+### Agent / IDE 工具私有目录 ###
+.mimosa/
+.qoder/
+.zcode/
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml

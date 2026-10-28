@@ -3,18 +3,27 @@ package site.codeblog.web.exception;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import site.codeblog.common.core.exception.BusinessException;
+import site.codeblog.common.core.result.GlobalErrorCode;
 import site.codeblog.common.core.result.Result;
 
 import java.util.stream.Collectors;
 
 /**
  * 全局异常处理器
+ * <p>
+ * 统一将异常转换为 {@link Result} 响应（HTTP 状态码保持 200，业务状态见 code 字段）。
  *
  * @author codeblog
  */
@@ -32,7 +41,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理参数校验异常(MethodArgumentNotValidException)
+     * 处理请求体不可读异常（JSON 格式错误等）
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public Result<Void> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        log.warn("请求体解析失败: {}", e.getMessage());
+        return Result.fail(GlobalErrorCode.BAD_REQUEST, "请求体格式不正确");
+    }
+
+    /**
+     * 处理参数校验异常(@RequestBody + @Valid)
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Result<Void> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
@@ -41,11 +59,11 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
         log.warn("参数校验异常: {}", message);
-        return Result.fail(400, message);
+        return Result.fail(GlobalErrorCode.BAD_REQUEST, message);
     }
 
     /**
-     * 处理参数校验异常(BindException)
+     * 处理参数校验异常(表单绑定)
      */
     @ExceptionHandler(BindException.class)
     public Result<Void> handleBindException(BindException e) {
@@ -54,11 +72,11 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
         log.warn("参数绑定异常: {}", message);
-        return Result.fail(400, message);
+        return Result.fail(GlobalErrorCode.BAD_REQUEST, message);
     }
 
     /**
-     * 处理约束违反异常
+     * 处理约束违反异常(@Validated 标注在类上时的单参数校验)
      */
     @ExceptionHandler(ConstraintViolationException.class)
     public Result<Void> handleConstraintViolationException(ConstraintViolationException e) {
@@ -67,7 +85,52 @@ public class GlobalExceptionHandler {
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.joining(", "));
         log.warn("约束违反异常: {}", message);
-        return Result.fail(400, message);
+        return Result.fail(GlobalErrorCode.BAD_REQUEST, message);
+    }
+
+    /**
+     * 处理缺少请求参数异常
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public Result<Void> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+        log.warn("缺少请求参数: {}", e.getParameterName());
+        return Result.fail(GlobalErrorCode.BAD_REQUEST, "缺少请求参数: " + e.getParameterName());
+    }
+
+    /**
+     * 处理参数类型不匹配异常
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public Result<Void> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        log.warn("参数类型不匹配: {}", e.getName());
+        return Result.fail(GlobalErrorCode.BAD_REQUEST, "请求参数类型不正确: " + e.getName());
+    }
+
+    /**
+     * 处理请求方法不支持异常
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public Result<Void> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
+        log.warn("请求方法不支持: {}", e.getMethod());
+        return Result.fail(GlobalErrorCode.METHOD_NOT_ALLOWED);
+    }
+
+    /**
+     * 处理请求地址不存在异常
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public Result<Void> handleNoResourceFoundException(NoResourceFoundException e) {
+        log.warn("请求地址不存在: {}", e.getResourcePath());
+        return Result.fail(GlobalErrorCode.NOT_FOUND);
+    }
+
+    /**
+     * 处理上传文件超出大小限制异常
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public Result<Void> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
+        log.warn("上传文件超出大小限制: {}", e.getMessage());
+        return Result.fail(GlobalErrorCode.PAYLOAD_TOO_LARGE);
     }
 
     /**
@@ -76,7 +139,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NullPointerException.class)
     public Result<Void> handleNullPointerException(NullPointerException e) {
         log.error("空指针异常", e);
-        return Result.fail(500, "系统内部错误");
+        return Result.fail(GlobalErrorCode.INTERNAL_SERVER_ERROR);
     }
 
     /**
@@ -85,7 +148,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public Result<Void> handleIllegalArgumentException(IllegalArgumentException e) {
         log.warn("非法参数异常: {}", e.getMessage());
-        return Result.fail(400, e.getMessage());
+        return Result.fail(GlobalErrorCode.BAD_REQUEST, e.getMessage());
     }
 
     /**
@@ -94,7 +157,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public Result<Void> handleRuntimeException(RuntimeException e) {
         log.error("运行时异常", e);
-        return Result.fail(500, "系统内部错误");
+        return Result.fail(GlobalErrorCode.INTERNAL_SERVER_ERROR);
     }
 
     /**
@@ -103,6 +166,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public Result<Void> handleException(Exception e) {
         log.error("未知异常", e);
-        return Result.fail(500, "系统内部错误");
+        return Result.fail(GlobalErrorCode.INTERNAL_SERVER_ERROR);
     }
 }

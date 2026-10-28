@@ -1,49 +1,43 @@
 package site.codeblog.mybatis.core.exception;
 
 import lombok.Getter;
+import site.codeblog.common.core.exception.BusinessException;
 
 /**
- * MyBatis-Flex 自定义异常类
+ * MyBatis-Flex 组件异常
+ * <p>
+ * 继承 {@link BusinessException}，可被全局异常处理器统一转换为 Result 响应。
  *
  * @author codeblog
  */
 @Getter
-public class MybatisFlexException extends RuntimeException {
+public class MybatisFlexException extends BusinessException {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * 错误码
+     * 组件错误标识（如 DATASOURCE_ERROR / AUDIT_ERROR / CONFIGURATION_ERROR）
      */
     private final String errorCode;
-
-    /**
-     * 错误信息
-     */
-    private final String errorMessage;
 
     public MybatisFlexException(String message) {
         super(message);
         this.errorCode = "MYBATIS_FLEX_ERROR";
-        this.errorMessage = message;
     }
 
     public MybatisFlexException(String errorCode, String message) {
         super(message);
         this.errorCode = errorCode;
-        this.errorMessage = message;
     }
 
     public MybatisFlexException(String message, Throwable cause) {
         super(message, cause);
         this.errorCode = "MYBATIS_FLEX_ERROR";
-        this.errorMessage = message;
     }
 
     public MybatisFlexException(String errorCode, String message, Throwable cause) {
         super(message, cause);
         this.errorCode = errorCode;
-        this.errorMessage = message;
     }
 
     /**
@@ -60,7 +54,7 @@ public class MybatisFlexException extends RuntimeException {
     }
 
     /**
-     * SQL审计相关异常
+     * SQL 审计相关异常
      */
     public static class AuditException extends MybatisFlexException {
         public AuditException(String message) {

@@ -8,16 +8,14 @@ spring:
     nacos:
       discovery:
         server-addr: 127.0.0.1:8848
-        namespace: 56b31109-6df4-4a89-bd3a-291eb017f54c
       config:
         server-addr: 127.0.0.1:8848
         file-extension: yaml
-        namespace: 56b31109-6df4-4a89-bd3a-291eb017f54c
     gateway:
       server:
         webflux:
           routes:
-            # 示例路由配置
+            # 用户服务：前端访问 /user/**，去除一级前缀后转发
             - id: user-service
               uri: lb://user-service
               predicates:
@@ -29,3 +27,31 @@ spring:
       host: 127.0.0.1
       port: 6379
       database: 0
+
+# Sa-Token：统一使用 Authorization: Bearer <token> 头
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 2592000
+  active-timeout: -1
+  is-concurrent: true
+  is-log: false
+
+codeblog:
+  gateway:
+    # 网关统一鉴权
+    security:
+      enabled: true
+      excludes:
+        - /user/auth/login
+        - /doc.html
+        - /webjars/**
+        - /v3/api-docs/**
+        - /actuator/**
+        - /favicon.ico
+    # 跨域（开发期建议走前端代理，此配置用于直连场景）
+    cors:
+      allowed-origins:
+        - "*"
+      allow-credentials: true
+      max-age: 3600
