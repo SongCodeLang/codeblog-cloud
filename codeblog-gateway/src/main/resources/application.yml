@@ -15,11 +15,11 @@ spring:
       server:
         webflux:
           routes:
-            # 用户服务：前端访问 /user/**，去除一级前缀后转发
-            - id: user-service
-              uri: lb://user-service
+            # 系统管理服务：前端访问 /system/**，去除一级前缀后转发
+            - id: codeblog-system
+              uri: lb://codeblog-system
               predicates:
-                - Path=/user/**
+                - Path=/system/**
               filters:
                 - StripPrefix=1
   data:
@@ -43,7 +43,7 @@ codeblog:
     security:
       enabled: true
       excludes:
-        - /user/auth/login
+        - /system/auth/login
         - /doc.html
         - /webjars/**
         - /v3/api-docs/**

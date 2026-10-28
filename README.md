@@ -54,8 +54,11 @@ codeblog-cloud/
 │   ├── codeblog-spring-boot-starter-excel/      # Excel 工具库
 │   ├── codeblog-spring-boot-starter-file/       # 文件工具库
 │   └── codeblog-common/          # 公共组件（core: Result/错误码/分页模型, util: 上下文工具）
+├── codeblog-api/                # 服务对外契约层（Feign 接口 + DTO，无实现）
+│   └── codeblog-api-system/     # 系统管理服务契约
+├── codeblog-modules/            # 业务服务聚合（每子模块 = 一个可独立部署服务）
+│   └── codeblog-system/         # 系统管理服务（认证 + 用户管理，spring.application.name=codeblog-system）
 ├── codeblog-gateway/            # API 网关（Sa-Token Reactor 统一鉴权 + CORS）
-├── codeblog-user/               # 用户服务（认证 + 用户管理，spring.application.name=user-service）
 ├── codeblog-ui/                 # 管理后台前端（React + TS + AntD）
 ├── docker/docker-compose.yml    # 基础设施编排（MySQL + Redis + Nacos）
 └── pom.xml
@@ -82,7 +85,7 @@ docker compose up -d
 方式 B —— 本机服务：启动 MySQL 与 Redis，然后导入初始化 SQL：
 
 ```bash
-mysql -uroot -p < codeblog-user/sql/init.sql
+mysql -uroot -p < codeblog-modules/codeblog-system/sql/init.sql
 ```
 
 ### 2. 构建后端
@@ -96,8 +99,8 @@ mvn clean install -DskipTests
 **本地联调（无需 Nacos，推荐开发时使用）：**
 
 ```bash
-# 用户服务（端口 48081）
-java -jar codeblog-user/target/codeblog-user-2026.02.jar --spring.profiles.active=local
+# 系统管理服务（端口 48081）
+java -jar codeblog-modules/codeblog-system/target/codeblog-system-2026.02.jar --spring.profiles.active=local
 
 # 网关（端口 9999，路由直连本机服务）
 java -jar codeblog-gateway/target/codeblog-gateway-2026.02.jar --spring.profiles.active=local
@@ -106,7 +109,7 @@ java -jar codeblog-gateway/target/codeblog-gateway-2026.02.jar --spring.profiles
 **注册中心模式（默认 profile，需 Nacos 运行于 127.0.0.1:8848）：**
 
 ```bash
-java -jar codeblog-user/target/codeblog-user-2026.02.jar
+java -jar codeblog-modules/codeblog-system/target/codeblog-system-2026.02.jar
 java -jar codeblog-gateway/target/codeblog-gateway-2026.02.jar
 ```
 
@@ -115,18 +118,18 @@ java -jar codeblog-gateway/target/codeblog-gateway-2026.02.jar
 ```bash
 cd codeblog-ui
 npm install
-npm run dev          # http://localhost:5173（/user 代理到网关 9999）
+npm run dev          # http://localhost:5173（/system 代理到网关 9999）
 ```
 
 ### 5. 访问
 
 - 管理后台：<http://localhost:5173>，默认账号 `admin / admin123`
-- 用户服务 API 文档：<http://127.0.0.1:48081/doc.html>
-- 网关入口：<http://127.0.0.1:9999>（`/user/**` → 用户服务）
+- 系统管理服务 API 文档：<http://127.0.0.1:48081/doc.html>
+- 网关入口：<http://127.0.0.1:9999>（`/system/**` → 系统管理服务）
 
 ## 🔐 认证与请求约定
 
-- 登录：`POST /user/auth/login` 返回 `token`
+- 登录：`POST /system/auth/login` 返回 `token`
 - 后续请求携带请求头 `Authorization: Bearer <token>`（网关统一校验，Redis 共享会话）
 - 响应统一为 `Result<T>`：`{ code, message, data, timestamp }`，`code=200` 成功，`401` 未登录
 - 后端 `Long` 统一序列化为字符串，避免 JS 精度丢失（前端已适配）

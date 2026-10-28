@@ -12,9 +12,9 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // 开发期代理：/user/** → 网关 9999（网关 StripPrefix 后转发用户服务）
+    // 开发期代理：/system/** → 网关 9999（网关 StripPrefix 后转发系统管理服务）
     proxy: {
-      '/user': {
+      '/system': {
         target: 'http://127.0.0.1:9999',
         changeOrigin: true,
       },

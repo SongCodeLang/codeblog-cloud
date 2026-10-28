@@ -1,12 +1,12 @@
 import { request } from './http'
 import type { LoginParams, LoginResult, UserInfo } from '@/types/api'
 
-/** 认证相关接口（经网关：/user/** → 用户服务 /auth/**） */
+/** 认证相关接口（经网关：/system/** → 系统管理服务 /auth/**） */
 export const authApi = {
   login: (data: LoginParams) =>
-    request<LoginResult>({ url: '/user/auth/login', method: 'POST', data }),
+    request<LoginResult>({ url: '/system/auth/login', method: 'POST', data }),
 
-  logout: () => request<void>({ url: '/user/auth/logout', method: 'POST' }),
+  logout: () => request<void>({ url: '/system/auth/logout', method: 'POST' }),
 
-  me: () => request<UserInfo>({ url: '/user/auth/me' }),
+  me: () => request<UserInfo>({ url: '/system/auth/me' }),
 }

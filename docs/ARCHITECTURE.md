@@ -1,6 +1,6 @@
 # codeblog-cloud 架构规划
 
-> 版本：v0.1（2026-10-28）｜状态：待评审确认
+> 版本：v0.2（2026-10-28）｜状态：执行中（阶段 1 已完成）
 > 配套文档：[AGENTS.md](../AGENTS.md)（智能体/协作者工作规范）、[README.md](../README.md)（快速上手）
 > 输入依据：2026-10-28 全栈架构评审报告（八板块逐项通读代码后得出）
 
@@ -243,7 +243,7 @@ sql/
 | 阶段 | 状态 | 完成日期 | tag |
 |---|---|---|---|
 | 0 规划 | ✅ 已完成 | 2026-10-28 | - |
-| 1 模块重组 | ⬜ 未开始 | - | - |
+| 1 模块重组 | ✅ 已完成 | 2026-10-28 | phase-1-restructure |
 | 2 微服务治理组件 | ⬜ 未开始 | - | - |
 | 3 RBAC 权限 | ⬜ 未开始 | - | - |
 | 4 拦截链与可观测 | ⬜ 未开始 | - | - |
@@ -260,6 +260,17 @@ sql/
 - 偏差：无（纯规划阶段）
 - 决策：ADR-1 ~ ADR-5 于本阶段制定；SQL 双轨规范与回填机制系用户评审时追加需求，直接并入本版
 - 2026-10-28 规划内修订：用户追加微服务治理组件（Nacos/Sentinel/Seata）与日志收集需求（第 12 节、ADR-6~8）；路线图由 0-7 扩为 0-8（新增阶段 2 治理组件接入，阶段 7 更名为日志收集与工程化，阶段 8 博客业务），全文阶段编号引用已同步顺延
+
+#### 阶段 1 · 模块重组（2026-10-28）
+
+- 产出：`codeblog-modules` 聚合 + `codeblog-system`（包名 `site.codeblog.system`，主类 `SystemApplication`，服务名 `codeblog-system`）；`codeblog-api` 聚合 + `codeblog-api-system` 空壳（pom + package-info，已入 BOM）；路由 `/user/**` → `/system/**` 全链切换（网关路由与白名单、前端 vite 代理与 api 封装、README/AGENTS.md/higress-guide 同步）；docker-compose init.sql 挂载路径更新为 modules 下并更名 `01_system.sql`；`.idea/encodings.xml` 路径同步
+- 验证：`mvn clean install -DskipTests` 19 模块全绿；全链路回归 13/13 通过（登录、未登录 401、/me、分页、用户 CRUD 全流程、重复用户名拒绝 1004、doc.html 直连与经网关、旧前缀 `/user/**` 不再放行）
+- 偏差与关键事实：
+  - 迁移未在 IDEA 内 Refactor 完成，由智能体以 `git mv` + 逐文件编辑执行（git 重命名跟踪完整）；按已知坑 5 已清理 IDEA 外部存储缓存（IDEA 未运行时删除 `external_build_system` / `project-model-cache`），下次打开需等待 Maven 重新同步
+  - 主类随包名一并更名 `UserApplication → SystemApplication`（计划未明说，属迁移一致性动作）
+  - BOM 纳管 `codeblog-api-system` 但未纳管 `codeblog-system`（可部署服务不应被他方依赖，符合第 3 节边界规则）
+  - Nacos 环境（如有）需手工新建 dataId `codeblog-system.yaml` 并迁移旧 `user-service.yaml` 配置；本地 local 联调不受影响，阶段 2 规范化时一并处理
+  - 本阶段无表结构变更，`init.sql` 原样随迁移搬移（`codeblog-modules/codeblog-system/sql/`），无增量脚本
 
 ## 12. 微服务治理组件与日志收集（阶段 2 / 7 实施依据；2026-10-28 追加）
 

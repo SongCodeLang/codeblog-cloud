@@ -6,7 +6,7 @@
 ## 项目定位
 
 基于 Spring Boot 3.5 + Spring Cloud 2025 的微服务脚手架 + 博客平台后端，配套 React + TS 管理后台（codeblog-ui）。
-当前阶段：脚手架成型，模块重组（codeblog-modules）规划中，实施前先读架构文档的阶段路线图。
+当前阶段：模块重组（阶段 1）已完成，下一步为阶段 2 微服务治理组件；实施前先读架构文档的阶段路线图。
 
 ## 技术栈与版本矩阵（锁定，禁止随意升级）
 
@@ -37,21 +37,22 @@
 本地联调（免 Nacos）：
 
 1. 起 MySQL 8.4 与 Redis 7.4（ServBay 或 `docker/docker-compose.yml`；数据库口令以 docker-compose 环境变量或本机 ServBay 配置为准，禁止在任何文档中明文记录）
-2. 首次导入初始化 SQL（模块重组后路径为 `codeblog-modules/codeblog-system/sql/init.sql`）
+2. 首次导入初始化 SQL（`codeblog-modules/codeblog-system/sql/init.sql`）
 3. 启动服务，均加 `--spring.profiles.active=local`：
-   - 系统服务（原 codeblog-user）：端口 48081
+   - 系统服务 codeblog-modules/codeblog-system：端口 48081
    - 网关 codeblog-gateway：端口 9999
-4. 前端：`cd codeblog-ui && npm install && npm run dev`（5173）
-5. 默认演示账号：见初始化 SQL 脚本内的注释说明（`codeblog-user/sql/init.sql`，重组后为 `codeblog-modules/codeblog-system/sql/init.sql`），不在此明文记录
+4. 前端：`cd codeblog-ui && npm install && npm run dev`（5173，/system 代理到网关）
+5. 默认演示账号：见初始化 SQL 脚本内的注释说明（`codeblog-modules/codeblog-system/sql/init.sql`），不在此明文记录
 
-## 模块地图（目标结构，重组细节见 docs/ARCHITECTURE.md）
+## 模块地图（重组细节见 docs/ARCHITECTURE.md）
 
 ```
 codeblog-dependencies/   BOM，第三方版本唯一管理点
 codeblog-framework/      技术组件层（starter + common），不含任何业务代码
-codeblog-api/            （新增规划）服务对外契约：Feign 接口 + DTO，无实现
-codeblog-modules/        （新增规划）业务服务聚合，每个子模块 = 一个可独立部署服务
-  codeblog-system/       系统管理服务（认证/用户/角色/菜单/字典/配置/日志），由 codeblog-user 迁移而来
+codeblog-api/            服务对外契约：Feign 接口 + DTO，无实现
+  codeblog-api-system/   系统服务契约（首个真实接口随阶段 6 落地）
+codeblog-modules/        业务服务聚合，每个子模块 = 一个可独立部署服务
+  codeblog-system/       系统管理服务（认证/用户，角色/菜单/字典/配置/日志随阶段演进）
   codeblog-blog/         （二期）博客业务：文章/分类/标签/评论
 codeblog-gateway/        网关：路由 / CORS / Sa-Token 统一登录鉴权
 codeblog-ui/             React 管理后台

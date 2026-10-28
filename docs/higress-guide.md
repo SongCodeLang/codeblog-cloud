@@ -11,7 +11,7 @@
 |----|------|
 | 网关实现 | Spring Cloud Gateway（Spring Boot 3.5.16 + Spring Cloud 2025.0.3），WebFlux/Reactor 模型 |
 | 统一鉴权 | 网关内 `SaReactorFilter` 校验 Sa-Token 会话（Redis 共享会话），白名单可配置 |
-| 路由方式 | `application.yml` 声明 `lb://user-service`，经 Spring Cloud LoadBalancer 查 Nacos |
+| 路由方式 | `application.yml` 声明 `lb://codeblog-system`，经 Spring Cloud LoadBalancer 查 Nacos |
 | 跨域 | 网关内 `CorsWebFilter` 统一处理 |
 | 部署形态 | `java -jar` 单进程，与业务服务同构 |
 | 认证约定 | `Authorization: Bearer <token>`，业务服务亦有服务级拦截兜底（security starter） |

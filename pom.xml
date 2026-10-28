@@ -12,8 +12,9 @@
     <modules>
         <module>codeblog-dependencies</module>
         <module>codeblog-framework</module>
+        <module>codeblog-api</module>
+        <module>codeblog-modules</module>
         <module>codeblog-gateway</module>
-        <module>codeblog-user</module>
     </modules>
 
     <name>${project.artifactId}</name>

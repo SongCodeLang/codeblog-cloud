@@ -27,8 +27,10 @@
     <file url="file://$PROJECT_DIR$/codeblog-framework/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/codeblog-gateway/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/codeblog-gateway/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/codeblog-user/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/codeblog-user/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/codeblog-api/codeblog-api-system/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/codeblog-api/codeblog-api-system/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/codeblog-modules/codeblog-system/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/codeblog-modules/codeblog-system/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/codeblog-dependencies/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/codeblog-dependencies/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />

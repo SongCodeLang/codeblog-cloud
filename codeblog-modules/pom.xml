@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>site.codeblog.cloud</groupId>
+        <artifactId>codeblog-cloud</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <packaging>pom</packaging>
+    <artifactId>codeblog-modules</artifactId>
+
+    <description>
+        业务服务聚合层：每个子模块是一个可独立构建部署的服务，
+        服务间调用一律走 codeblog-api 契约（Feign），禁止互相依赖实现 jar
+    </description>
+
+    <modules>
+        <module>codeblog-system</module>
+    </modules>
+
+</project>

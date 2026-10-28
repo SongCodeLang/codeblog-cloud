@@ -11,8 +11,8 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      # 首次启动自动执行用户服务初始化脚本
-      - ../codeblog-user/sql/init.sql:/docker-entrypoint-initdb.d/01_user.sql:ro
+      # 首次启动自动执行系统管理服务初始化脚本
+      - ../codeblog-modules/codeblog-system/sql/init.sql:/docker-entrypoint-initdb.d/01_system.sql:ro
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
   redis:

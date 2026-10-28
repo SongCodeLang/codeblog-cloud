@@ -13,9 +13,9 @@ spring:
       server:
         webflux:
           routes:
-            - id: user-service
+            - id: codeblog-system
               uri: http://127.0.0.1:48081
               predicates:
-                - Path=/user/**
+                - Path=/system/**
               filters:
                 - StripPrefix=1

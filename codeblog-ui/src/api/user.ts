@@ -8,11 +8,11 @@ import type {
   UserInfo,
 } from '@/types/api'
 
-/** 用户管理接口（经网关：/user/user/** → 用户服务 /user/**） */
+/** 用户管理接口（经网关：/system/user/** → 系统管理服务 /user/**） */
 export const userApi = {
   page: async (query: UserPageQuery) => {
     const res = await request<PageResult<UserInfo>>({
-      url: '/user/user/page',
+      url: '/system/user/page',
       method: 'GET',
       params: query,
     })
@@ -20,16 +20,16 @@ export const userApi = {
     return { list: res.list, total: Number(res.total) }
   },
 
-  get: (id: string) => request<UserInfo>({ url: `/user/user/get/${id}`, method: 'GET' }),
+  get: (id: string) => request<UserInfo>({ url: `/system/user/get/${id}`, method: 'GET' }),
 
   create: (data: UserCreateParams) =>
-    request<string>({ url: '/user/user/create', method: 'POST', data }),
+    request<string>({ url: '/system/user/create', method: 'POST', data }),
 
   update: (data: UserUpdateParams) =>
-    request<void>({ url: '/user/user/update', method: 'PUT', data }),
+    request<void>({ url: '/system/user/update', method: 'PUT', data }),
 
-  remove: (id: string) => request<void>({ url: `/user/user/delete/${id}`, method: 'DELETE' }),
+  remove: (id: string) => request<void>({ url: `/system/user/delete/${id}`, method: 'DELETE' }),
 
   resetPassword: (data: UserResetPasswordParams) =>
-    request<void>({ url: '/user/user/reset-password', method: 'PUT', data }),
+    request<void>({ url: '/system/user/reset-password', method: 'PUT', data }),
 }
