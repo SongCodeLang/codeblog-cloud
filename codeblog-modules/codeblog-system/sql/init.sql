@@ -1,5 +1,5 @@
 -- --------------------------------------------------------------------
--- CodeBlog Cloud 用户服务初始化脚本
+-- CodeBlog Cloud 系统管理服务初始化脚本（全量基线）
 -- 数据库：codeblog（需先创建）
 -- 默认账号：admin / admin123
 -- --------------------------------------------------------------------
@@ -27,3 +27,18 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
 INSERT INTO `sys_user` (`username`, `password`, `nickname`, `email`, `status`, `del_flag`)
 SELECT 'admin', '$2a$10$9gkJjAGMB8RevUURYoNme.2g1NUOaMKroVBCzik9qTq5nR0p9I1yi', '管理员', 'admin@codeblog.site', 0, 0
 WHERE NOT EXISTS (SELECT 1 FROM `sys_user` WHERE `username` = 'admin');
+
+-- --------------------------------------------------------------------
+-- Seata AT 模式 undo_log（阶段2 并入基线；增量脚本 seata_20261028.sql 供存量环境）
+-- --------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `undo_log` (
+    `branch_id`     BIGINT     NOT NULL COMMENT 'branch transaction id',
+    `xid`           VARCHAR(128) NOT NULL COMMENT 'global transaction id',
+    `context`       VARCHAR(128) NOT NULL COMMENT 'undo_log context,such as serialization',
+    `rollback_info` LONGBLOB   NOT NULL COMMENT 'rollback info',
+    `log_status`    INT        NOT NULL COMMENT '0:normal status,1:defense status',
+    `log_created`   DATETIME(6) NOT NULL COMMENT 'create datetime',
+    `log_modified`  DATETIME(6) NOT NULL COMMENT 'modify datetime',
+    UNIQUE KEY `ux_undo_log` (`xid`, `branch_id`)
+) ENGINE = InnoDB COMMENT = 'AT transaction mode undo table';

@@ -23,6 +23,9 @@
 | 缓存 | Redisson + Spring Data Redis | 4.8.0 | 分布式缓存、锁 |
 | RPC | OpenFeign | 随 Spring Cloud | 声明式 HTTP 客户端（认证头 / 链路透传） |
 | 网关 | Spring Cloud Gateway | 随 Spring Cloud | 路由转发、统一鉴权、CORS |
+| 注册/配置中心 | Nacos | 随 SCA 2025 | 服务发现 + spring.config.import 配置分层 |
+| 流控熔断 | Sentinel | 1.8.9（随 SCA） | 规则 Nacos 持久化 + 网关流控（SCG v6x adapter） |
+| 分布式事务 | Apache Seata | 2.5.0（随 SCA） | AT 模式就绪，跨服务写时启用 @GlobalTransactional |
 | 文档 | Knife4j / SpringDoc | 4.5.0 / 2.8.x | OpenAPI 3 文档 |
 | 工具 | Hutool / Lombok / MapStruct | 5.8.48 / 1.18.42 / 1.6.3 | 工具集 / 简化代码 / 对象映射 |
 | Excel | FastExcel | 1.3.0 | Excel 导入导出 |
@@ -79,8 +82,11 @@ codeblog-cloud/
 
 ```bash
 cd docker
-docker compose up -d
+docker compose up -d          # mysql + redis + nacos + sentinel-dashboard(8858) + seata-server(7091/8091)
 ```
+
+> Sentinel 控制台默认账号为官方默认 sentinel/sentinel（可用环境变量 AUTH_PASSWORD 覆盖）；
+> 持久化流控/熔断规则在 Nacos 控制台编辑 dataId `{service}-{ruleType}-rules`（模板见 `docker/nacos/`），dashboard 仅作监控视图与临时推送。
 
 方式 B —— 本机服务：启动 MySQL 与 Redis，然后导入初始化 SQL：
 
@@ -145,6 +151,12 @@ npm run dev          # http://localhost:5173（/system 代理到网关 9999）
 | `codeblog.mybatis.audit-console-enabled` | SQL 控制台审计（仅开发） | false |
 | `codeblog.rpc.feign-log-level` | Feign 日志级别 | 关闭 |
 | `codeblog.banner.enabled` | 启动 Banner 开关 | true |
+| `spring.cloud.sentinel.enabled` | Sentinel 开关（local profile 降级为 false） | true |
+| `spring.cloud.sentinel.transport.dashboard` | Sentinel 控制台地址 | 127.0.0.1:8858 |
+| `spring.cloud.sentinel.datasource.*` | 规则数据源（Nacos 持久化，热更新） | flow/degrade/gw-flow |
+| `seata.enabled` | Seata 客户端开关（local profile 降级为 false） | true |
+| `seata.tx-service-group` | 事务分组 | codeblog_tx_group |
+| `spring.config.import` | Nacos 配置导入（仅非 local profile） | 共享+私有 dataId |
 
 ## 🔄 版本管理
 

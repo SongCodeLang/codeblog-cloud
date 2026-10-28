@@ -244,7 +244,7 @@ sql/
 |---|---|---|---|
 | 0 规划 | ✅ 已完成 | 2026-10-28 | - |
 | 1 模块重组 | ✅ 已完成 | 2026-10-28 | phase-1-restructure |
-| 2 微服务治理组件 | ⬜ 未开始 | - | - |
+| 2 微服务治理组件 | ✅ 已完成 | 2026-10-28 | phase-2-governance |
 | 3 RBAC 权限 | ⬜ 未开始 | - | - |
 | 4 拦截链与可观测 | ⬜ 未开始 | - | - |
 | 5 数据与缓存 | ⬜ 未开始 | - | - |
@@ -272,6 +272,19 @@ sql/
   - Nacos 环境（如有）需手工新建 dataId `codeblog-system.yaml` 并迁移旧 `user-service.yaml` 配置；本地 local 联调不受影响，阶段 2 规范化时一并处理
   - 本阶段无表结构变更，`init.sql` 原样随迁移搬移（`codeblog-modules/codeblog-system/sql/`），无增量脚本
 
+#### 阶段 2 · 微服务治理组件（2026-10-28）
+
+- 产出：Nacos 规范化（去 bootstrap starter → `spring.config.import` 条件文档 + application-common.yaml 共享配置收敛白名单）；Sentinel 全链（system/gateway 依赖 + 规则 Nacos 持久化 dataId `{service}-{ruleType}-rules` + local 降级）；Seata 就绪（client 2.5.0 + seata-server 进 compose + undo_log 双轨 SQL）；compose 新增 sentinel-dashboard(8858) 与 seata-server(7091/8091)
+- 验收实测：nacos 服务发现两服务注册、网关 lb 路由登录 200、dashboard `/app/names.json` 可见 codeblog-system/codeblog-gateway、/user/page 限 2 QPS 规则连打 10 次 4×200+6×429 且**服务重启后规则仍生效**（Nacos 重载）、Seata TM/RM 注册成功 + 数据源 AT 代理自动装配、local profile 回归 13/13 且 Nacos 客户端零启动
+- 偏差与关键事实（均已同步 12.2/12.3 节）：
+  - Seata 版本核验（开工首日实测项）结论：SCA 2025.0.0.0 的 seata starter 直依赖 `org.apache.seata:seata-spring-boot-starter:2.5.0`，与 Boot 3.5/SC 2025 配套成立；seata-server 镜像 `apache/seata-server:2.5.0` 经挂载 application.yml 注册进 Nacos
+  - `spring.config.import` 是跨文档追加语义：profile 文档**无法覆盖**主文档的 import，local 隔离必须用 `on-profile: "!local"` 条件文档承载 nacos import（否则 local 下 Nacos 客户端仍会启动重连）
+  - SCA 的 sentinel-datasource 模块将 `sentinel-datasource-nacos` 标记 optional，业务 pom 必须显式引入，否则数据源 FactoryBean 构建失败导致启动失败
+  - sentinel 网关适配 artifact 为 `spring-cloud-alibaba-sentinel-gateway`（SCA 2025 无 starter-gateway 命名），需与核心 starter 并用
+  - dashboard 镜像选型 bladex/sentinel-dashboard（Sentinel 1.8.10 内核，官方未发布镜像）：仅监控/临时推送定位，持久化规则一律在 Nacos 编辑（ADR-6 工作流的落地形态）
+  - seata 客户端开发联调走 grouplist 直连 127.0.0.1:8091（Docker Desktop 容器 IP 宿主机不可达，注册发现地址仅同网络部署可用）；生产切换 registry=nacos 已在配置注释预留
+  - 运维注意：Windows curl 向 Nacos 发布含中文配置会被 ANSI(GBK) 转码导致服务端 YAML 解析失败——线上操作一律走 Nacos 控制台（本阶段验收用 ASCII 百分号编码绕过）
+
 ## 12. 微服务治理组件与日志收集（阶段 2 / 7 实施依据；2026-10-28 追加）
 
 > 本节回应两条追加需求：①system 子服务开发时接入 Nacos / Sentinel / Seata；②系统与业务日志的收集方案。
@@ -289,22 +302,22 @@ sql/
 
 | 事项 | 方案 |
 |---|---|
-| 依赖 | `spring-cloud-starter-alibaba-sentinel`（版本随 SCA BOM）；Feign 整合 `feign.sentinel.enabled=true` |
-| Dashboard | 阶段 2 进 docker-compose（单实例，随基础设施一键起）；生产环境另评估托管/高可用方案 |
-| 规则持久化 | `sentinel-datasource-nacos`：流控/熔断/热点/系统规则全部落 Nacos，dashboard 推送到 Nacos、服务监听加载——规则重启不丢（dashboard 默认推内存，重启即失） |
-| 网关流控 | `sentinel-spring-cloud-gateway-adapter`：路由维度 + API 分组维度，替代拦截链蓝图原 G4 的 RequestRateLimiter（ADR-6） |
+| 依赖 | `spring-cloud-starter-alibaba-sentinel`（业务服务）+ `spring-cloud-alibaba-sentinel-gateway`（网关，SCA 2025 无 starter-gateway 命名）；**必须显式引入 `sentinel-datasource-nacos`**（SCA datasource 模块将其标记 optional）；Feign 整合 `feign.sentinel.enabled=true` 阶段 6 落地 |
+| Dashboard | bladex/sentinel-dashboard 镜像（Sentinel 1.8.10 内核，官方不发布镜像）已进 compose；**定位为监控视图 + 临时推送**，持久化规则不经过 dashboard（其推送仅到客户端内存） |
+| 规则持久化 | `sentinel-datasource-nacos`：dataId 约定 `{service}-{ruleType}-rules`（flow/degrade/gw-flow），在 **Nacos 控制台**编辑，服务监听热加载、重启自动重载——2026-10-28 实测通过（限流规则重启后仍生效） |
+| 网关流控 | `sentinel-spring-cloud-gateway-v6x-adapter`（随 SCA 2025，配套 SCG 4.3）：路由/API 分组维度，dataId `codeblog-gateway-gwflow-rules` |
 | Feign 熔断 | fallbackFactory 定义在 codeblog-api 模块，与阶段 6 Feign 容错（ErrorDecoder 错误翻译）合并落地 |
-| local 降级 | 不接 dashboard、不配规则（无规则即直通），本地联调零外部依赖 |
+| local 降级 | `spring.cloud.sentinel.enabled=false`：不接 dashboard、不加载规则（无规则即直通），本地联调零外部依赖 |
 
 ### 12.3 Seata —— 就绪先行，用例后置（ADR-7）
 
 | 事项 | 方案 |
 |---|---|
-| 版本核验 | **开工首日实测项**：Seata 已迁 Apache 组织（org.apache.seata 2.x），需确认与 SCA 2025 / Boot 3.5 的 starter 配套组合（spring-cloud-starter-alibaba-seata 或直接 seata-spring-boot-starter + 排除冲突），核验结论回填本节 |
-| 服务端 | seata-server 进 docker-compose（standalone，注册进 Nacos；存储 file 模式起步，生产切 db） |
-| 客户端 | 各业务库建 `undo_log` 表（增量脚本 `seata_YYYYMMDD.sql`）；AT 模式数据源自动代理 |
+| 版本核验 | **已实测通过（2026-10-28）**：SCA 2025.0.0.0 的 `spring-cloud-starter-alibaba-seata` 直依赖 `org.apache.seata:seata-spring-boot-starter:2.5.0`（Apache Seata 2.5.0，按 Boot 3.5 配套），与本项目 Boot 3.5.16/SC 2025.0.3 组合启动、TM/RM 注册、AT 数据源代理均正常，无需排除冲突依赖 |
+| 服务端 | seata-server 进 docker-compose（`apache/seata-server:2.5.0`，standalone；经挂载 `docker/seata/application.yml` 注册进 Nacos SEATA_GROUP；存储 file 模式起步，生产切 db）。注意：镜像默认 application.yml 的 `spring.main.web-application-type: none` 必须保留，去掉会启动失败 |
+| 客户端 | 各业务库建 `undo_log` 表（增量脚本 `seata_20261028.sql`，已并入 init.sql 基线）；AT 模式数据源自动代理（实测 `Auto proxy data source 'dataSource' by 'AT' mode`）。**开发联调用 grouplist 直连 127.0.0.1:8091**（Docker Desktop 容器 IP 宿主机不可达），生产同网络部署切换 registry=nacos（配置已预留注释） |
 | 使用纪律 | 单服务多表写**一律 @Transactional，禁止滥用 @GlobalTransactional**（无跨库语义时只会放大锁与回滚开销）；跨服务写场景由发起方标注 @GlobalTransactional；TCC/SAGA 待真实长事务场景再评估 |
-| local 降级 | `seata.enable-auto-data-source-proxy=false`，不起 seata-server |
+| local 降级 | `seata.enabled=false`（不连 seata-server、关闭数据源代理） |
 | 首个用例 | 阶段 8 博客业务的跨服务写（如发文的 system 侧联动），并完成故意回滚验证 |
 
 ### 12.4 日志收集 —— 三层设计

@@ -1,0 +1,27 @@
+# =====================================================================
+# 共享配置模板：发布到 Nacos dataId = application-common.yaml（DEFAULT_GROUP）
+# 网关与全部业务服务经 spring.config.import 引用；本地 application.yml 保留兜底
+# 注意：Nacos 配置优先级高于本地 application.yml，此文件为唯一维护点
+# =====================================================================
+
+# 鉴权白名单收敛：两份清单物理相邻，语义不同——
+#   网关侧匹配"路由前缀路径"（StripPrefix 之前），服务侧匹配"去前缀后路径"
+codeblog:
+  gateway:
+    security:
+      # 网关白名单（带路由前缀），改动须同步评估下方服务白名单
+      excludes:
+        - /system/auth/login
+        - /doc.html
+        - /webjars/**
+        - /v3/api-docs/**
+        - /actuator/**
+        - /favicon.ico
+  security:
+    # 服务白名单（StripPrefix 后路径，各业务服务同名配置生效）
+    excludes:
+      - /auth/login
+      - /doc.html
+      - /webjars/**
+      - /v3/api-docs/**
+      - /favicon.ico

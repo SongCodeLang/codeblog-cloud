@@ -11,6 +11,17 @@ spring:
       config:
         server-addr: 127.0.0.1:8848
         file-extension: yaml
+    sentinel:
+      eager: true
+      transport:
+        dashboard: 127.0.0.1:8858
+      # 网关流控规则（gw-flow：路由 id / API 分组维度），Nacos 持久化
+      datasource:
+        gw-flow-rules:
+          nacos:
+            server-addr: 127.0.0.1:8848
+            data-id: codeblog-gateway-gwflow-rules
+            rule-type: gw-flow
     gateway:
       server:
         webflux:
@@ -55,3 +66,14 @@ codeblog:
         - "*"
       allow-credentials: true
       max-age: 3600
+
+---
+# Nacos 配置规范化（阶段2）：共享配置 + 服务私有配置；仅在非 local profile 生效。
+# config.import 是跨文档追加语义，必须用条件文档隔离（同 codeblog-system 的处理）。
+spring:
+  config:
+    activate:
+      on-profile: "!local"
+    import:
+      - optional:nacos:application-common.yaml
+      - optional:nacos:codeblog-gateway.yaml

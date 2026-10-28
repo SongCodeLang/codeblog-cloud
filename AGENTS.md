@@ -6,7 +6,7 @@
 ## 项目定位
 
 基于 Spring Boot 3.5 + Spring Cloud 2025 的微服务脚手架 + 博客平台后端，配套 React + TS 管理后台（codeblog-ui）。
-当前阶段：模块重组（阶段 1）已完成，下一步为阶段 2 微服务治理组件；实施前先读架构文档的阶段路线图。
+当前阶段：阶段 1（模块重组）与阶段 2（治理组件）已完成，下一步为阶段 3 RBAC 权限；实施前先读架构文档的阶段路线图。
 
 ## 技术栈与版本矩阵（锁定，禁止随意升级）
 
@@ -56,7 +56,7 @@ codeblog-modules/        业务服务聚合，每个子模块 = 一个可独立�
   codeblog-blog/         （二期）博客业务：文章/分类/标签/评论
 codeblog-gateway/        网关：路由 / CORS / Sa-Token 统一登录鉴权
 codeblog-ui/             React 管理后台
-docker/                  基础设施编排（mysql/redis/nacos；阶段2 增 sentinel-dashboard/seata-server；阶段7 增 loki/promtail/grafana）
+docker/                  基础设施编排（mysql/redis/nacos/sentinel-dashboard/seata-server 已就绪；阶段7 增 loki/promtail/grafana）
 ```
 
 依赖方向铁律：framework 不得依赖 api/modules；api 不得依赖 modules 实现；modules 之间禁止互相依赖实现 jar，跨服务调用走 Feign + codeblog-api。

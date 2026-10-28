@@ -1,0 +1,31 @@
+# seata-server 配置（挂载至 /seata-server/resources/application.yml）
+# 注意：必须保留 spring.main.web-application-type=none（镜像默认值，去掉会因缺 Servlet 容器启动失败）
+# 存储先用 file 模式（单机开发）；生产切 db/raft 时改 seata.store 段并补对应表结构
+server:
+  port: 8091
+
+spring:
+  application:
+    name: seata-server
+  main:
+    web-application-type: none
+
+logging:
+  config: classpath:logback-spring.xml
+  file:
+    path: ${user.home}/logs/seata
+
+seata:
+  config:
+    # 配置中心 file 模式起步；生产可切 nacos 统一管理
+    type: file
+  registry:
+    # 注册进 Nacos：客户端可经注册发现；开发联调（宿主机进程 + 端口映射）走 grouplist 直连
+    type: nacos
+    nacos:
+      application: seata-server
+      server-addr: nacos:8848
+      group: SEATA_GROUP
+      cluster: default
+  store:
+    mode: file

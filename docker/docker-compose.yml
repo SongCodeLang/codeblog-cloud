@@ -36,6 +36,33 @@ services:
       - "8848:8848"
       - "9848:9848"
 
+  # Sentinel 控制台（Dashboard 1.8.10 内核）：监控视图 + 临时推送；
+  # 持久化规则一律在 Nacos 控制台编辑 dataId {service}-{ruleType}-rules，服务端监听加载
+  sentinel-dashboard:
+    image: bladex/sentinel-dashboard:latest
+    container_name: codeblog-sentinel-dashboard
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "8858:8858"
+
+  # Seata TC 协调器（Apache Seata 2.5.0，与 SCA 2025.0.0.0 客户端严格配套）
+  # 控制台 7091 / 事务端口 8091；存储 file 模式起步，生产切 db；注册进 Nacos（SEATA_GROUP）
+  seata-server:
+    image: apache/seata-server:2.5.0
+    container_name: codeblog-seata-server
+    restart: unless-stopped
+    depends_on:
+      - nacos
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - ./seata/application.yml:/seata-server/resources/application.yml:ro
+    ports:
+      - "7091:7091"
+      - "8091:8091"
+
 volumes:
   mysql-data:
   redis-data:

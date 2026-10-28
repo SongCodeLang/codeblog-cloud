@@ -1,4 +1,5 @@
 # 本地联调配置：不依赖 Nacos，路由直连本机服务
+# Nacos config.import 已在 application.yml 的 "!local" 条件文档中隔离，此处无需覆盖
 # 启动方式：--spring.profiles.active=local
 spring:
   cloud:
@@ -9,6 +10,9 @@ spring:
         enabled: false
         import-check:
           enabled: false
+    sentinel:
+      # local 降级：不接 dashboard、不加载网关流控规则（无规则即直通）
+      enabled: false
     gateway:
       server:
         webflux:

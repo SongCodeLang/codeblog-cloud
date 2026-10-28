@@ -1,0 +1,9 @@
+[
+  {
+    "resource": "codeblog-system",
+    "resourceType": 1,
+    "grade": 1,
+    "count": 200,
+    "intervalSec": 1
+  }
+]

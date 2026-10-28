@@ -11,6 +11,22 @@ spring:
       config:
         server-addr: 127.0.0.1:8848
         file-extension: yaml
+    sentinel:
+      eager: true
+      transport:
+        dashboard: 127.0.0.1:8858
+      # 规则持久化：dataId 约定 {service}-{ruleType}-rules，在 Nacos 控制台编辑，服务监听热加载
+      datasource:
+        flow-rules:
+          nacos:
+            server-addr: 127.0.0.1:8848
+            data-id: codeblog-system-flow-rules
+            rule-type: flow
+        degrade-rules:
+          nacos:
+            server-addr: 127.0.0.1:8848
+            data-id: codeblog-system-degrade-rules
+            rule-type: degrade
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://127.0.0.1:3306/codeblog?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
@@ -52,6 +68,22 @@ codeblog:
 mybatis-flex:
   mapper-locations: classpath*:mapper/**/*.xml
 
+# Seata 分布式事务（阶段2 就绪先行，AT 模式；跨服务写才用 @GlobalTransactional）
+# 开发联调走 docker 端口映射直连；生产同网络部署时改 registry.type=nacos 发现 seata-server
+seata:
+  enabled: true
+  application-id: ${spring.application.name}
+  tx-service-group: codeblog_tx_group
+  service:
+    vgroup-mapping:
+      codeblog_tx_group: default
+    grouplist:
+      default: 127.0.0.1:8091
+  registry:
+    type: file
+  config:
+    type: file
+
 springdoc:
   api-docs:
     enabled: true
@@ -59,3 +91,15 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
+
+---
+# Nacos 配置规范化（阶段2）：共享配置 + 服务私有配置；仅在非 local profile 生效。
+# 注意：config.import 是跨文档追加语义（profile 文档覆盖不了主文档的 import），
+# 因此必须用条件文档隔离，local 下完全不触发 Nacos 客户端。
+spring:
+  config:
+    activate:
+      on-profile: "!local"
+    import:
+      - optional:nacos:application-common.yaml
+      - optional:nacos:codeblog-system.yaml

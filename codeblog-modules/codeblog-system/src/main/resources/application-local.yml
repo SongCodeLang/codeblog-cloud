@@ -1,4 +1,5 @@
-# 本地联调配置：不依赖 Nacos
+# 本地联调配置：不依赖 Nacos / Sentinel / Seata（治理三件套 local 降级约定）
+# Nacos config.import 已在 application.yml 的 "!local" 条件文档中隔离，此处无需覆盖
 # 启动方式：--spring.profiles.active=local
 spring:
   cloud:
@@ -9,3 +10,10 @@ spring:
         enabled: false
         import-check:
           enabled: false
+    sentinel:
+      # 不接 dashboard、不加载规则（无规则即直通），本地零外部依赖
+      enabled: false
+
+seata:
+  # 不连 seata-server、关闭数据源代理，保持本地联调轻量
+  enabled: false

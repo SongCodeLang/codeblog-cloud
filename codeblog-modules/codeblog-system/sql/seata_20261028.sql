@@ -1,0 +1,18 @@
+-- --------------------------------------------------------------------
+-- Seata AT 模式 undo_log 表（阶段2 治理组件接入）
+-- 依据：Apache Seata 2.5.0 官方 mysql.sql；每个参与全局事务的业务库各建一张
+-- 幂等：CREATE TABLE IF NOT EXISTS，可重复执行
+-- --------------------------------------------------------------------
+
+USE `codeblog`;
+
+CREATE TABLE IF NOT EXISTS `undo_log` (
+    `branch_id`     BIGINT     NOT NULL COMMENT 'branch transaction id',
+    `xid`           VARCHAR(128) NOT NULL COMMENT 'global transaction id',
+    `context`       VARCHAR(128) NOT NULL COMMENT 'undo_log context,such as serialization',
+    `rollback_info` LONGBLOB   NOT NULL COMMENT 'rollback info',
+    `log_status`    INT        NOT NULL COMMENT '0:normal status,1:defense status',
+    `log_created`   DATETIME(6) NOT NULL COMMENT 'create datetime',
+    `log_modified`  DATETIME(6) NOT NULL COMMENT 'modify datetime',
+    UNIQUE KEY `ux_undo_log` (`xid`, `branch_id`)
+) ENGINE = InnoDB COMMENT = 'AT transaction mode undo table';
