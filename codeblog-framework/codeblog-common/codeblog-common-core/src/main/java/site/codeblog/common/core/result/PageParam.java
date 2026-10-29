@@ -41,11 +41,4 @@ public class PageParam implements Serializable {
     @Max(value = 100, message = "每页条数最大为 100")
     private Integer pageSize = DEFAULT_PAGE_SIZE;
 
-    /**
-     * 获取偏移量（供 LIMIT/OFFSET 使用）
-     */
-    public int getOffset() {
-        return (pageNo - 1) * pageSize;
-    }
-
 }

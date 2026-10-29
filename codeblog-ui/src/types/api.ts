@@ -7,7 +7,8 @@ export interface ApiResult<T> {
   code: number
   message: string
   data: T
-  timestamp: number
+  /** 后端时间戳经 Long→String 全局序列化为字符串 */
+  timestamp: string
 }
 
 /** 分页响应 PageResult<T> */

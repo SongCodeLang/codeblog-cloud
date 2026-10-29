@@ -9,12 +9,12 @@
 codeblog:
   gateway:
     security:
-      # 网关白名单（带路由前缀），改动须同步评估下方服务白名单
+      # 网关白名单（带路由前缀，匹配原始路径），改动须同步评估下方服务白名单
       excludes:
         - /system/auth/login
-        - /doc.html
-        - /webjars/**
-        - /v3/api-docs/**
+        - /system/doc.html
+        - /system/webjars/**
+        - /system/v3/api-docs/**
         - /actuator/**
         - /favicon.ico
   security:

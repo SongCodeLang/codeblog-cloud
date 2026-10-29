@@ -55,9 +55,11 @@ codeblog:
       enabled: true
       excludes:
         - /system/auth/login
-        - /doc.html
-        - /webjars/**
-        - /v3/api-docs/**
+        # 网关白名单匹配的是带路由前缀的原始路径（AGENTS 已知坑 4）；
+        # /doc.html 等服务侧路径经网关访问时永远带 /system 前缀
+        - /system/doc.html
+        - /system/webjars/**
+        - /system/v3/api-docs/**
         - /actuator/**
         - /favicon.ico
     # 跨域（开发期建议走前端代理，此配置用于直连场景）
