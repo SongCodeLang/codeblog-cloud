@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 网关日志：薄覆盖，通用 pattern/滚动策略见 codeblog-common-core 的 defaults.xml -->
+<configuration>
+    <property name="APP_NAME" value="codeblog-gateway"/>
+    <property name="LOG_DIR" value="./logs"/>
+    <include resource="codeblog/logback/defaults.xml"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </root>
+</configuration>

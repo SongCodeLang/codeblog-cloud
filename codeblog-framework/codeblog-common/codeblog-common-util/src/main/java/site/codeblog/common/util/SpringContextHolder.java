@@ -4,15 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.stereotype.Component;
 
 /**
  * Spring 上下文工具类
+ * <p>
+ * 由 web starter 的 WebAutoConfiguration 注册（阶段4），不再依赖包扫描 @Component。
  *
  * @author codeblog
  */
 @Slf4j
-@Component
 public class SpringContextHolder implements ApplicationContextAware {
     
     private static ApplicationContext applicationContext;

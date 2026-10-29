@@ -4,8 +4,12 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.Ordered;
+import site.codeblog.common.util.SpringContextHolder;
 import site.codeblog.web.exception.GlobalExceptionHandler;
+import site.codeblog.web.filter.TraceIdFilter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,6 +24,28 @@ import java.time.format.DateTimeFormatter;
  */
 @AutoConfiguration
 public class WebAutoConfiguration {
+
+    /**
+     * 链路追踪 MDC 过滤器（S1）：注册为最前 Filter，先于 SaInterceptor 等一切 MVC 拦截器
+     */
+    @Bean
+    @ConditionalOnMissingBean(TraceIdFilter.class)
+    public FilterRegistrationBean<TraceIdFilter> codeblogTraceIdFilter() {
+        FilterRegistrationBean<TraceIdFilter> registration = new FilterRegistrationBean<>(new TraceIdFilter());
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        registration.addUrlPatterns("/*");
+        registration.setName("codeblogTraceIdFilter");
+        return registration;
+    }
+
+    /**
+     * Spring 上下文工具：随 web starter 自动装配（原先 @Component 无包扫描永远不生效，阶段4 修复）
+     */
+    @Bean
+    @ConditionalOnMissingBean(SpringContextHolder.class)
+    public SpringContextHolder springContextHolder() {
+        return new SpringContextHolder();
+    }
 
     /**
      * 全局异常处理器

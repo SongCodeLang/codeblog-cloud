@@ -148,7 +148,7 @@ npm run dev          # http://localhost:5173（/system 代理到网关 9999）
 | `codeblog.security.enabled` | 业务服务登录校验开关 | true |
 | `codeblog.security.excludes` | 登录校验白名单（Ant 风格） | - |
 | `codeblog.gateway.security.excludes` | 网关鉴权白名单 | 登录/文档/actuator |
-| `codeblog.gateway.cors.*` | 网关跨域配置 | `*` |
+| `codeblog.gateway.cors.*` | 网关跨域配置（阶段4 已收紧为显式来源清单） | localhost/127.0.0.1:5173 |
 | `codeblog.mybatis.audit-console-enabled` | SQL 控制台审计（仅开发） | false |
 | `codeblog.rpc.feign-log-level` | Feign 日志级别 | 关闭 |
 | `codeblog.banner.enabled` | 启动 Banner 开关 | true |
@@ -158,8 +158,11 @@ npm run dev          # http://localhost:5173（/system 代理到网关 9999）
 | `seata.enabled` | Seata 客户端开关（local profile 降级为 false） | true |
 | `spring.cloud.stream.rocketmq.binder.name-server` | RocketMQ NameServer 地址 | 127.0.0.1:9876 |
 | `codeblog.mq.login-event.enabled` | 登录事件收发开关（local profile 降级为 false，零 MQ 连接） | true |
+| `management.endpoints.web.exposure.include` | actuator 暴露端点（阶段4） | health,info |
+| `spring.servlet.multipart.max-file-size` | 上传单文件上限（阶段4 显式化） | 10MB |
 | `seata.tx-service-group` | 事务分组 | codeblog_tx_group |
 | `spring.config.import` | Nacos 配置导入（仅非 local profile） | 共享+私有 dataId |
+| `X-Trace-Id` | 链路追踪头：网关生成→服务 MDC→Feign 透传→响应头回写（阶段4） | - |
 
 ## 🔄 版本管理
 

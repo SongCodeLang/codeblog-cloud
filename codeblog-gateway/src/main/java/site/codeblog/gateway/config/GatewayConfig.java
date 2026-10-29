@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
@@ -33,12 +35,13 @@ public class GatewayConfig {
     private final ObjectMapper objectMapper;
 
     /**
-     * 网关统一鉴权过滤器
+     * 网关统一鉴权过滤器（顺序：CORS 预检 → traceId → 鉴权，见 corsWebFilter/TraceIdFilter）
      * <p>
      * 白名单放行，其余路径校验登录；未登录返回统一 JSON。
      * token 校验基于 Redis 共享会话，业务服务无需重复校验登录态。
      */
     @Bean
+    @Order(Ordered.HIGHEST_PRECEDENCE + 200)
     public SaReactorFilter saReactorFilter(GatewayProperties properties) {
         return new SaReactorFilter()
                 .addInclude("/**")
@@ -62,9 +65,11 @@ public class GatewayConfig {
     }
 
     /**
-     * 跨域配置（开发期推荐使用前端代理，此配置用于直连场景）
+     * 跨域配置（开发期推荐使用前端代理，此配置用于直连场景）。
+     * 顺序必须在鉴权之前：预检 OPTIONS 不携带 Authorization，若先过 Sa 会 401。
      */
     @Bean
+    @Order(Ordered.HIGHEST_PRECEDENCE + 50)
     public CorsWebFilter corsWebFilter(GatewayProperties properties) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(properties.getCors().getAllowedOrigins());

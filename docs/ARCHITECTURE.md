@@ -1,6 +1,6 @@
 # codeblog-cloud 架构规划
 
-> 版本：v0.3（2026-10-29）｜状态：执行中（阶段 3 已完成）
+> 版本：v0.4（2026-10-29）｜状态：执行中（阶段 4 已完成）
 > 配套文档：[AGENTS.md](../AGENTS.md)（智能体/协作者工作规范）、[README.md](../README.md)（快速上手）
 > 输入依据：2026-10-28 全栈架构评审报告（八板块逐项通读代码后得出）
 
@@ -165,25 +165,25 @@ site.codeblog.system
 
 | 序 | 组件 | 职责 | 状态 |
 |---|---|---|---|
-| G1 | TraceIdFilter（GlobalFilter，Ordered=-100） | 入口生成/透传 `X-Trace-Id`；注入转发请求头并回写响应头 | 阶段4 新增 |
-| G2 | CorsWebFilter | 跨域；allowedOrigins 由 `*` 收紧为显式来源清单 | 已具备，阶段4 收紧 |
+| G1 | TraceIdFilter（WebFilter，HIGHEST+100） | 入口生成/透传 `X-Trace-Id`；注入转发请求头并回写响应头 | ✅ 已具备（阶段4） |
+| G2 | CorsWebFilter（HIGHEST+50） | 跨域；allowedOrigins 已由 `*` 收紧为显式来源清单 | ✅ 已具备，已收紧 |
 | G3 | SaReactorFilter | 白名单放行 + 登录校验（Redis 共享会话）+ 鉴权异常统一 JSON | 已具备 |
 | G4 | Sentinel 网关流控（sentinel-spring-cloud-gateway-adapter） | 路由/API 分组维度限流，规则 Nacos 持久化 | 阶段2 接入（见第 12.2 节，ADR-6） |
-| G5 | 统一 ErrorWebExceptionHandler | 非 Sa-Token 的网关异常也输出 Result JSON（现为 Spring 默认错误体） | 阶段4 新增 |
+| G5 | 统一 ErrorWebExceptionHandler | 非 Sa-Token 的网关异常也输出 Result JSON（现为 Spring 默认错误体） | ✅ 已具备（阶段4） |
 
 ### 8.2 服务侧（Servlet）
 
 | 序 | 组件 | 类型 | 职责 | 状态 |
 |---|---|---|---|---|
-| S1 | TraceMdcFilter | Filter（最先） | 读/生成 X-Trace-Id → MDC + 响应头回写；finally MDC.clear | 阶段4 新增 |
+| S1 | TraceMdcFilter（web starter） | Filter（HIGHEST） | 读/生成 X-Trace-Id → MDC + 响应头回写；finally MDC.clear | ✅ 已具备（阶段4） |
 | S2 | SaInterceptor | MVC 拦截器 | 登录校验 + 白名单 | 已具备（阶段3 起配合注解鉴权） |
-| S3 | ContextInterceptor | MVC 拦截器 | 登录校验通过后填充 ThreadContextHolder(userId/username)，afterCompletion 清理——激活 TTL 工具 | 阶段4 新增 |
+| S3 | ContextInterceptor（security starter） | MVC 拦截器（order=110） | 登录校验通过后填充 ThreadContextHolder(userId/username)，afterCompletion 清理——激活 TTL 工具 | ✅ 已具备（阶段4） |
 | S4 | @SaCheckPermission / @SaCheckRole | AOP（sa-token-spring-aop，依赖已引入） | 接口级授权 | 阶段3 启用 |
 | S5 | @Log 操作日志 | AOP | 管理写操作审计落 sys_oper_log | 阶段6 新增 |
 | S6 | @RepeatSubmit | AOP | Redis setnx + 参数摘要防重复提交 | 阶段7 评估 |
 | S7 | LockTemplate（编程式锁，watchdog） | 工具 | 分布式锁统一入口 | 阶段5 新增 |
 
-配套修复（阶段4 一并完成）：SpringContextHolder 由 `@Component` 改为 AutoConfiguration 注册（当前包路径扫描不到、永不装配）；新增 logback-spring.xml 统一日志 pattern（含 traceId、文件滚动，详见 12.4 L1）；引入 actuator 暴露健康端点；multipart 大小显式配置。
+配套修复（阶段4 已完成，2026-10-29）：SpringContextHolder 已改为 WebAutoConfiguration 注册（去 @Component，随 web starter 自动装配）；logback 统一日志已落地（defaults.xml 落 codeblog-common-core，服务薄覆盖，含 traceId/滚动/error 文件）；actuator 已引入（system/gateway，expose health,info）；multipart 大小已显式配置（10MB/20MB）。
 
 链路追踪闭环：G1 生成 → 转发头 → S1 写 MDC → 日志输出 → rpc starter（已具备）Feign 透传 → 下游服务 S1 → 响应头回写 X-Trace-Id（前端报障可对号入座）。
 
@@ -247,7 +247,7 @@ sql/
 | 1 模块重组 | ✅ 已完成 | 2026-10-28 | phase-1-restructure |
 | 2 微服务治理组件 | ✅ 已完成 | 2026-10-28 | phase-2-governance |
 | 3 RBAC 权限 | ✅ 已完成 | 2026-10-29 | phase-3-rbac |
-| 4 拦截链与可观测 | ⬜ 未开始 | - | - |
+| 4 拦截链与可观测 | ✅ 已完成 | 2026-10-29 | phase-4-observability |
 | 5 数据与缓存 | ⬜ 未开始 | - | - |
 | 6 组件完善 | ⬜ 未开始 | - | - |
 | 7 日志收集与工程化 | ⬜ 未开始 | - | - |
@@ -305,6 +305,17 @@ sql/
   - dashboard 镜像（apache/rocketmq-dashboard:1.1.0）因 Docker Hub 网络超时暂未拉起，compose 定义已就绪，网络恢复后 `docker compose up -d rocketmq-dashboard` 即可
   - broker store 卷问题与 brokerIP1 问题均为实测踩坑，结论写入 12.5，compose/broker.conf 内有注释
 
+#### 阶段 4 · 拦截链与可观测（2026-10-29）
+
+- 产出：网关 G1 TraceIdFilter（生成/透传/回写 X-Trace-Id）+ G5 统一 ErrorWebExceptionHandler（Result JSON）+ CORS 由 `*` 收紧为显式来源清单；服务侧 S1 TraceMdcFilter（web starter 自动注册，HIGHEST）+ S3 ContextInterceptor（security starter，SaInterceptor(order=100) 之后 order=110，填充/清理 ThreadContextHolder）；SpringContextHolder 去 @Component 改随 WebAutoConfiguration 装配；logback 统一（defaults.xml + 服务薄覆盖：pattern 含 traceId、app/error 按天滚动 30 天、`./logs/{service}/`）；actuator（system/gateway，expose health,info）；multipart 显式 10MB/20MB
+- 验收实测：网关生成与自定义 traceId 透传均回写响应头（含 401 场景）；服务日志文件行内实证 `[trace2log999]`；/actuator/health 双端 200 UP；CORS 预检 200+回显、非法来源无回显；白名单内无路由路径返回 Result JSON 404；SpringContextHolder 装配日志实证；回归 12/12（登录/401/403/分页校验/CRUD/actuator）
+- 偏差与关键事实：
+  - **G1 形态修正**：蓝图写 GlobalFilter(-100)，实际落地为 WebFilter(HIGHEST+100)——SaReactorFilter 是 WebFilter，GlobalFilter 在其后执行，鉴权失败响应会丢失 traceId 头（实测发现，已回填 8.1 表）
+  - **WebFilter 顺序必须显式**：CorsWebFilter/SaReactorFilter 原先均无 order，实测 OPTIONS 预检被 Sa 401 拦截（此前一直未被发现的隐患：阶段1-3 验收全走 vite 代理同源，CORS 链路首次被真正测试）。最终顺序 CORS(+50) → TraceId(+100) → Sa(+200)
+  - **logback defaults.xml 落点偏差**：蓝图写 web starter 内置默认，实际落 codeblog-common-core——网关是 WebFlux 不依赖 web starter，common-core 双侧共用（服务 logback-spring.xml 以 include 引入）
+  - G5 生效机制：Boot 的 ErrorWebFluxAutoConfiguration @ConditionalOnMissingBean(ErrorWebExceptionHandler)，自定义 bean 注册后默认处理器自动退位，@Order(-2) 仅作保险
+  - 网关日志 traceId 不进 pattern（WebFlux MDC 跨线程不可靠，蓝图已知限制，实证维持）；排查注意：WSL 读 /mnt/c 日志文件有缓存延迟，验证以 Windows 侧 type/grep 为准
+
 ## 12. 微服务治理组件与日志收集（阶段 2 / 7 实施依据；2026-10-28 追加；12.5 RocketMQ 为 2026-10-29 追加）
 
 > 本节回应两条追加需求：①system 子服务开发时接入 Nacos / Sentinel / Seata；②系统与业务日志的收集方案。
@@ -344,7 +355,7 @@ sql/
 
 | 层 | 内容 | 落点 |
 |---|---|---|
-| L1 应用日志规范 | logback-spring.xml 统一：pattern 含 traceId、按天滚动（app-%d.log 保留 30 天）、error 单独文件、目录 `./logs/{service}/`；web starter 内置默认 + 各服务薄覆盖 | 阶段 4（与 MDC 同批落地） |
+| L1 应用日志规范 | logback-spring.xml 统一：pattern 含 traceId、按天滚动（app-%d.log 保留 30 天）、error 单独文件、目录 `./logs/{service}/`；web starter 内置默认 + 各服务薄覆盖 | ✅ 已落地（阶段4，2026-10-29；defaults.xml 落 codeblog-common-core 供 WebFlux 网关共用） |
 | L2 业务审计日志 | `@Log` 切面 → `sys_oper_log`（操作人/模块/动作/参数/结果/IP/耗时）；`sys_login_log` 登录成败记录；均提供管理端查询接口 | 登录日志随阶段 3；操作日志阶段 6 |
 | L3 集中收集 | **Grafana Loki + Promtail + Grafana** 进 docker-compose：Promtail 采集 `./logs/` 按 {service}/{env} 打标签；Grafana 预置视图——按 traceId 反查全链路日志、按服务/级别/时间过滤（ADR-8）。EFK 为数据量增大后备选；APM（SkyWalking / Micrometer Tracing + Zipkin）二期可选，一期以自研 traceId + Loki 满足排障闭环 | 阶段 7 |
 

@@ -63,11 +63,20 @@ codeblog:
         - /actuator/**
         - /favicon.ico
     # 跨域（开发期建议走前端代理，此配置用于直连场景）
+    # 阶段4 收紧：由 * 改为显式来源清单（allow-credentials=true 时浏览器本就拒绝通配符 Origin）
     cors:
       allowed-origins:
-        - "*"
+        - http://localhost:5173
+        - http://127.0.0.1:5173
       allow-credentials: true
       max-age: 3600
+
+# 健康端点（网关自身 9999，已入鉴权白名单）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
 
 ---
 # Nacos 配置规范化（阶段2）：共享配置 + 服务私有配置；仅在非 local profile 生效。

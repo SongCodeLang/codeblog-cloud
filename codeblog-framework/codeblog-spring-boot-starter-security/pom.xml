@@ -23,6 +23,12 @@
             <artifactId>codeblog-common-core</artifactId>
         </dependency>
 
+        <!-- Common Util（ThreadContextHolder，S3 拦截器填充，阶段4） -->
+        <dependency>
+            <groupId>site.codeblog.cloud</groupId>
+            <artifactId>codeblog-common-util</artifactId>
+        </dependency>
+
         <!-- Sa-Token 核心 -->
         <dependency>
             <groupId>cn.dev33</groupId>

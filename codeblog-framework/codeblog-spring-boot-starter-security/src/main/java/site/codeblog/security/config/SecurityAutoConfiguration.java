@@ -15,6 +15,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import site.codeblog.security.core.LoginUser;
 import site.codeblog.security.core.sa.DefaultStpInterfaceImpl;
 import site.codeblog.security.exception.SaTokenExceptionHandler;
+import site.codeblog.security.interceptor.ContextInterceptor;
 
 /**
  * Sa-Token 安全自动配置（Servlet 环境）
@@ -52,7 +53,12 @@ public class SecurityAutoConfiguration {
                             }
                         }))
                         .addPathPatterns("/**")
-                        .excludePathPatterns(properties.getExcludes());
+                        .excludePathPatterns(properties.getExcludes())
+                        .order(100);
+                // S3：登录校验之后填充 ThreadContextHolder（userId/username），业务代码免直接依赖 Sa-Token
+                registry.addInterceptor(new ContextInterceptor())
+                        .addPathPatterns("/**")
+                        .order(110);
             }
         };
     }

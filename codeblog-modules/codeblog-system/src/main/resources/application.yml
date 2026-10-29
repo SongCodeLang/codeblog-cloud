@@ -39,6 +39,11 @@ spring:
             server-addr: 127.0.0.1:8848
             data-id: codeblog-system-degrade-rules
             rule-type: degrade
+  servlet:
+    # 上传大小显式限制（阶段4；File 存储抽象随阶段6 落地后真正用到）
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://127.0.0.1:3306/codeblog?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
@@ -74,6 +79,7 @@ codeblog:
       - /webjars/**
       - /v3/api-docs/**
       - /favicon.ico
+      - /actuator/**
   mybatis:
     audit-console-enabled: false
 
@@ -103,6 +109,13 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
+
+# 健康端点（服务直连 48081，探测免登录；经网关访问需网关侧白名单放行）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
 
 ---
 # Nacos 配置规范化（阶段2）：共享配置 + 服务私有配置；仅在非 local profile 生效。
