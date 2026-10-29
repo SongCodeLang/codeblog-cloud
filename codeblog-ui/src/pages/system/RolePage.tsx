@@ -163,6 +163,7 @@ export default function RolePage() {
         sortOrder: values.sortOrder ?? 0,
         status,
         remark: values.remark,
+        version: editing.version,
       })
     } else {
       createMutation.mutate({

@@ -80,6 +80,8 @@ docker/                  基础设施编排（mysql/redis/nacos/sentinel-dashboa
 5. **模块/目录重命名必须在 IDEA 内 Refactor → Rename/Move 完成** —— 在 IDEA 外重命名 Maven 目录会残留外部存储模块缓存（Project 视图出现 `name[name]`），修复需关 IDEA 删缓存
 6. **未继承 spring-boot-starter-parent** —— 新增可执行服务模块时，spring-boot-maven-plugin 必须显式 `<execution>repackage</execution>`
 7. `.flattened-pom.xml` 已被 git 忽略，勿提交
+8. **Spring Data Redis 3.5 的 SerializationPair 在 RedisSerializationContext 嵌套**（非 RedisSerializer 内部）；且缓存值含 LocalDateTime 时 ObjectMapper 必须注册 jackson-datatype-jsr310，否则写 Redis 报 "Java 8 date/time type not supported"（redis starter 的 buildJsonObjectMapper 已统一处理，勿另建序列化器）
+9. **实体继承 BaseEntity 后，表必须有全部审计列**（create_by/create_time/update_by/update_time）+ 对应 version 列（若 PO 声明 @Column(version=true)），否则 BadSqlGrammar——新表设计默认带全审计列，参考 sys_role
 
 ## 安全红线
 

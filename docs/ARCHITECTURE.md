@@ -1,6 +1,6 @@
 # codeblog-cloud 架构规划
 
-> 版本：v0.4（2026-10-29）｜状态：执行中（阶段 4 已完成）
+> 版本：v0.5（2026-10-29）｜状态：执行中（阶段 5 已完成）
 > 配套文档：[AGENTS.md](../AGENTS.md)（智能体/协作者工作规范）、[README.md](../README.md)（快速上手）
 > 输入依据：2026-10-28 全栈架构评审报告（八板块逐项通读代码后得出）
 
@@ -248,7 +248,7 @@ sql/
 | 2 微服务治理组件 | ✅ 已完成 | 2026-10-28 | phase-2-governance |
 | 3 RBAC 权限 | ✅ 已完成 | 2026-10-29 | phase-3-rbac |
 | 4 拦截链与可观测 | ✅ 已完成 | 2026-10-29 | phase-4-observability |
-| 5 数据与缓存 | ⬜ 未开始 | - | - |
+| 5 数据与缓存 | ✅ 已完成 | 2026-10-29 | phase-5-data-cache |
 | 6 组件完善 | ⬜ 未开始 | - | - |
 | 7 日志收集与工程化 | ⬜ 未开始 | - | - |
 | 8 博客业务 | ⬜ 未开始 | - | - |
@@ -383,3 +383,15 @@ sql/
 
 1. **brokerIP1 必须显式指定 `127.0.0.1`**：默认注册容器 IP，Docker Desktop 下宿主机不可达（同 Seata grouplist 直连理由）；代价是 compose 内部容器互访 broker 受限（dashboard 部分页签可能异常）。
 2. **开发编排不挂 broker store 卷**：命名卷以 root 属主初始化，镜像内 broker 用户（uid 3000）不可写 → broker 静默失败、退出码 255，且 shutdown 路径 NPE 掩盖真实原因；生产挂卷需 `chown 3000:3000`。开发环境存储随容器（重建即清空，与 Seata file 模式同定位）。
+
+#### 阶段 5 · 数据与缓存（2026-10-29）
+
+- 产出：①缓存——redis starter 新增 CacheAutoConfiguration（@EnableCaching + RedisCacheManager，复用 codeblogRedisTemplate 同款 JSON 带类型序列化 + jsr310，缓存名即 key 前缀单冒号拼接，`codeblog.cache.default-ttl/specs` 配置化）+ LockTemplate（Redisson watchdog + finally unlock，S7）；system 侧 currentUser(/auth/me)/菜单树/启用角色列表三处 @Cacheable，失效矩阵与安全批次吊销点同方法联动（用户变更 evict 单 key、角色变更级联 evict 绑定用户）+ TTL 兜底；CacheConstants 收口缓存名与登录锁 key。②数据——BaseEntity（审计四字段）+ AuditListener（@Table onInsert/onUpdate，操作人取 ThreadContextHolder，未登录填 system），服务层手工赋值全部清理；sys_user/sys_role/sys_menu 加 version 乐观锁列（冲突 409，VO/前端回传 version）；sys_user 补齐历史缺失的 create_by/update_by 列。③DuplicateKeyException 全局兜底 409（web starter，不解析唯一键名映射业务码，避免框架携带业务概念；web starter 为此引入 spring-tx 依赖）
+- 选型结论（用户指定的两份文档研读后）：MyBatis-Flex 官方同样推荐 Spring Cache 路线（背书），但其 CacheableServiceImpl 模式需迁移 IService 基类体系且 list(QueryWrapper) 以 toSQL() 为 key 粗糙，本项目手写 Service 体系不采纳；Sa-Token 官方推荐 sa-token-redis-template（已在用；1.46 起依赖 Redis 6.0+ SET KEEPTTL，本项目 Redis 7.4 满足；多项目共用 Redis 靠前缀隔离已满足，生产建议独立 db）
+- 验收实测：回归 18/18——/auth/me 二次调用零 SQL（缓存命中实证）；菜单树/角色列表二次命中；并发建同名用户 5 发无 500、1×200+其余 1004/409（前置查重+409 兜底双生效）；create_by=admin 自动填充；旧 version 更新被拒 409；更新后缓存失效新值可见
+- 偏差与关键事实：
+  - 缓存验收首轮两处假阳性：缓存写失败 500 时两次调用均无 SQL 被误判为命中——验收断言必须含响应码，教训已吸收
+  - 踩坑①：Spring Data Redis 3.5 的 SerializationPair 是 RedisSerializationContext 嵌套类（非 RedisSerializer.SerializationPair）
+  - 踩坑②：缓存值含 LocalDateTime 的 VO，CacheManager 的 ObjectMapper 必须注册 jackson-datatype-jsr310，否则写缓存报 "Java 8 date/time type not supported"（RedisTemplate 与 CacheManager 已统一 buildJsonObjectMapper）
+  - 踩坑③：sys_user 历史表结构无 create_by/update_by（role/menu 有），BaseEntity 引入后 BadSqlGrammar——增量 SQL 补齐（data_20261029.sql），新表设计应默认带全审计列
+  - 软删撞键（uk+del_flag）按评审决策不改，DuplicateKey 409 兜底后无 500，限制保持记录

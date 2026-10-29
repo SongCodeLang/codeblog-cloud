@@ -2,7 +2,9 @@ package site.codeblog.system.service.impl;
 
 import com.mybatisflex.core.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import site.codeblog.system.constant.CacheConstants;
 import site.codeblog.system.entity.MenuPO;
 import site.codeblog.system.mapper.MenuMapper;
 import site.codeblog.system.service.MenuService;
@@ -27,6 +29,7 @@ public class MenuServiceImpl implements MenuService {
     private final MenuMapper menuMapper;
 
     @Override
+    @Cacheable(cacheNames = CacheConstants.MENU_TREE)
     public List<MenuTreeRespVO> tree() {
         List<MenuPO> menus = menuMapper.selectListByQuery(QueryWrapper.create()
                 .orderBy(MENU_PO.SORT_ORDER.asc(), MENU_PO.ID.asc()));

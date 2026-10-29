@@ -4,11 +4,16 @@ import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.codeblog.common.core.exception.BusinessException;
 import site.codeblog.common.core.result.PageResult;
+import site.codeblog.common.core.result.GlobalErrorCode;
 import site.codeblog.security.core.LoginHelper;
+import site.codeblog.system.constant.CacheConstants;
 import site.codeblog.system.constant.ErrorCodeConstants;
 import site.codeblog.system.convert.RoleConvert;
 import site.codeblog.system.entity.MenuPO;
@@ -66,15 +71,31 @@ public class RoleServiceImpl implements RoleService {
     private final RoleMenuMapper roleMenuMapper;
     private final UserRoleMapper userRoleMapper;
     private final RoleConvert roleConvert;
+    private final CacheManager cacheManager;
 
-    /** 吊销某角色全部绑定用户的会话（角色状态/权限变更后，旧快照权限不可继续生效） */
+    /**
+     * 吊销某角色全部绑定用户的会话并失效其用户缓存（角色状态/权限变更后，
+     * 旧快照权限不可继续生效，缓存与吊销必须同点联动）
+     */
     private void revokeRoleUserSessions(Long roleId) {
         List<Long> userIds = userRoleMapper.selectListByQuery(QueryWrapper.create()
                         .where(USER_ROLE_PO.ROLE_ID.eq(roleId))).stream()
                 .map(UserRolePO::getUserId).distinct().toList();
         userIds.forEach(LoginHelper::logoutByUserId);
+        Cache userCache = cacheManager.getCache(CacheConstants.USER);
+        if (userCache != null) {
+            userIds.forEach(userCache::evict);
+        }
         if (!userIds.isEmpty()) {
             log.info("角色变更已吊销 {} 个用户会话：roleId={}", userIds.size(), roleId);
+        }
+    }
+
+    /** 失效角色列表缓存（角色增删改后调用；TTL 10 分钟兑底） */
+    private void evictRoleListCache() {
+        Cache cache = cacheManager.getCache(CacheConstants.ROLE_LIST);
+        if (cache != null) {
+            cache.clear();
         }
     }
 
@@ -92,6 +113,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConstants.ROLE_LIST)
     public List<RoleRespVO> listEnabled() {
         List<RolePO> roles = roleMapper.selectListByQuery(QueryWrapper.create()
                 .where(ROLE_PO.STATUS.eq(STATUS_ENABLED))
@@ -106,9 +128,8 @@ public class RoleServiceImpl implements RoleService {
         RolePO role = roleConvert.convert(reqVO);
         role.setStatus(reqVO.getStatus() == null ? STATUS_ENABLED : reqVO.getStatus());
         role.setDelFlag(0);
-        role.setCreateTime(LocalDateTime.now());
-        role.setUpdateTime(LocalDateTime.now());
         roleMapper.insert(role);
+        evictRoleListCache();
         return role.getId();
     }
 
@@ -124,8 +145,11 @@ public class RoleServiceImpl implements RoleService {
         checkRoleKeyUnique(reqVO.getRoleKey(), reqVO.getId());
 
         RolePO role = roleConvert.convert(reqVO);
-        role.setUpdateTime(LocalDateTime.now());
-        roleMapper.update(role);
+        int rows = roleMapper.update(role);
+        if (rows == 0) {
+            throw BusinessException.of(GlobalErrorCode.CONFLICT, "角色已被他人修改，请刷新后重试");
+        }
+        evictRoleListCache();
         // 角色（含状态/权限字符）变更即吊销绑定用户：会话权限是登录快照
         revokeRoleUserSessions(reqVO.getId());
     }
@@ -147,6 +171,7 @@ public class RoleServiceImpl implements RoleService {
         }
         roleMenuMapper.deleteByQuery(QueryWrapper.create().where(ROLE_MENU_PO.ROLE_ID.eq(id)));
         roleMapper.deleteById(id);
+        evictRoleListCache();
     }
 
     @Override

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import site.codeblog.common.core.result.Result;
+import site.codeblog.security.core.LoginHelper;
 import site.codeblog.system.service.UserService;
 import site.codeblog.system.vo.AuthLoginReqVO;
 import site.codeblog.system.vo.AuthLoginRespVO;
@@ -44,7 +45,7 @@ public class AuthController {
     @Operation(summary = "当前登录用户信息")
     @GetMapping("/me")
     public Result<UserRespVO> me() {
-        return Result.success(userService.currentUser());
+        return Result.success(userService.currentUser(LoginHelper.getUserId()));
     }
 
 }

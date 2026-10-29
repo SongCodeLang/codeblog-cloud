@@ -5,10 +5,11 @@ import com.mybatisflex.annotation.Id;
 import com.mybatisflex.annotation.KeyType;
 import com.mybatisflex.annotation.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import site.codeblog.mybatis.core.domain.BaseEntity;
+import site.codeblog.mybatis.core.listener.AuditListener;
 
 import java.io.Serial;
-import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * 用户表实体
@@ -16,8 +17,9 @@ import java.time.LocalDateTime;
  * @author codeblog
  */
 @Data
-@Table("sys_user")
-public class UserPO implements Serializable {
+@EqualsAndHashCode(callSuper = true)
+@Table(value = "sys_user", onInsert = AuditListener.class, onUpdate = AuditListener.class)
+public class UserPO extends BaseEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -65,13 +67,9 @@ public class UserPO implements Serializable {
     private Integer delFlag;
 
     /**
-     * 创建时间
+     * 乐观锁版本号（更新条件携带，冲突时影响行数为 0）
      */
-    private LocalDateTime createTime;
-
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updateTime;
+    @Column(version = true)
+    private Integer version;
 
 }

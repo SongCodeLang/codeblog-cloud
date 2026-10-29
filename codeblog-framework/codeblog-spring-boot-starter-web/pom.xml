@@ -34,6 +34,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+        <!-- spring-tx（org.springframework.dao.DuplicateKeyException 所在，阶段5 409 兜底） -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
         
         <!-- Knife4j API 文档 -->
         <dependency>

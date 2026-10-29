@@ -33,4 +33,9 @@ public class RoleUpdateReqVO {
     @Size(max = 200, message = "备注最长 200 个字符")
     private String remark;
 
+    /**
+     * 乐观锁版本号（编辑时回传，并发修改冲突返回 409）
+     */
+    private Integer version;
+
 }

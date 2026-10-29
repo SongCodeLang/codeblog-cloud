@@ -161,7 +161,8 @@ export default function UserPage() {
   const handleEditorSubmit = async () => {
     const values = await editorForm.validateFields()
     if (editing) {
-      updateMutation.mutate({ ...values, id: editing.id })
+      // version 随编辑回传，乐观锁冲突时后端返回 409
+      updateMutation.mutate({ ...values, id: editing.id, version: editing.version })
     } else {
       createMutation.mutate({
         username: values.username!,

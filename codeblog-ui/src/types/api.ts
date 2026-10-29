@@ -35,6 +35,8 @@ export interface UserInfo {
   mobile?: string
   status: UserStatus
   createTime?: string
+  /** 乐观锁版本号（编辑时回传） */
+  version?: number
   /** 角色权限字符集合 */
   roles?: string[]
   /** 权限标识集合（admin 为 ['*']） */
@@ -82,6 +84,8 @@ export interface UserUpdateParams {
   email?: string
   mobile?: string
   status: UserStatus
+  /** 乐观锁版本号（编辑时回传） */
+  version?: number
 }
 
 /** 重置密码参数 */
@@ -99,6 +103,8 @@ export interface RoleInfo {
   status: UserStatus
   remark?: string
   createTime?: string
+  /** 乐观锁版本号（编辑时回传） */
+  version?: number
 }
 
 /** 角色分页查询参数 */
@@ -120,6 +126,8 @@ export interface RoleCreateParams {
 /** 更新角色参数 */
 export interface RoleUpdateParams extends RoleCreateParams {
   id: string
+  /** 乐观锁版本号（编辑时回传） */
+  version?: number
 }
 
 /** 菜单类型：1 目录，2 菜单，3 按钮 */

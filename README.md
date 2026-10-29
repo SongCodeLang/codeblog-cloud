@@ -160,6 +160,8 @@ npm run dev          # http://localhost:5173（/system 代理到网关 9999）
 | `codeblog.mq.login-event.enabled` | 登录事件收发开关（local profile 降级为 false，零 MQ 连接） | true |
 | `management.endpoints.web.exposure.include` | actuator 暴露端点（阶段4） | health,info |
 | `spring.servlet.multipart.max-file-size` | 上传单文件上限（阶段4 显式化） | 10MB |
+| `codeblog.cache.default-ttl` | Spring Cache 默认 TTL（阶段5，所有缓存必设） | 30m |
+| `codeblog.cache.specs.*` | 按缓存名覆盖 TTL（如 codeblog:system:user: 30m） | - |
 | `seata.tx-service-group` | 事务分组 | codeblog_tx_group |
 | `spring.config.import` | Nacos 配置导入（仅非 local profile） | 共享+私有 dataId |
 | `X-Trace-Id` | 链路追踪头：网关生成→服务 MDC→Feign 透传→响应头回写（阶段4） | - |

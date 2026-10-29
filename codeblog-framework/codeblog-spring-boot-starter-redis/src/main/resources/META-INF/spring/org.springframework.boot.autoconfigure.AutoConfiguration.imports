@@ -1,1 +1,2 @@
 site.codeblog.redis.config.RedisAutoConfiguration
+site.codeblog.redis.config.CacheAutoConfiguration

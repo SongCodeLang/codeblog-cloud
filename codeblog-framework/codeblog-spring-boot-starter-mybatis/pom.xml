@@ -35,6 +35,12 @@
             <artifactId>codeblog-common-core</artifactId>
         </dependency>
 
+        <!-- Common Util（审计监听器取 ThreadContextHolder 操作人，阶段5） -->
+        <dependency>
+            <groupId>site.codeblog.cloud</groupId>
+            <artifactId>codeblog-common-util</artifactId>
+        </dependency>
+
         <!-- MySQL 驱动（由业务服务按需引入具体数据库驱动） -->
         <dependency>
             <groupId>com.mysql</groupId>

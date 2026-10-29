@@ -3,6 +3,7 @@ package site.codeblog.web.exception;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -38,6 +39,17 @@ public class GlobalExceptionHandler {
     public Result<Void> handleBusinessException(BusinessException e) {
         log.warn("业务异常: {}", e.getMessage());
         return Result.fail(e.getCode(), e.getMessage());
+    }
+
+    /**
+     * 唯一键冲突兜底（阶段5）：并发下前置查重漏网时由数据库约束拦住。
+     * 不解析唯一键名映射业务码（避免 framework 携带业务概念），统一 409；
+     * 精确提示（如 1004 用户名已存在）由服务层前置校验给出。
+     */
+    @ExceptionHandler(DuplicateKeyException.class)
+    public Result<Void> handleDuplicateKeyException(DuplicateKeyException e) {
+        log.warn("唯一键冲突: {}", e.getMessage());
+        return Result.fail(GlobalErrorCode.CONFLICT);
     }
 
     /**

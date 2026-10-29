@@ -35,4 +35,9 @@ public class UserUpdateReqVO {
     @NotNull(message = "状态不能为空")
     private Integer status;
 
+    /**
+     * 乐观锁版本号（编辑时回传，并发修改冲突返回 409）
+     */
+    private Integer version;
+
 }

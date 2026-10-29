@@ -71,6 +71,13 @@ sa-token:
   is-log: false
 
 codeblog:
+  cache:
+    # 阶段5：缓存名即 key 前缀（codeblog:{service}:{domain}），所有缓存必须有 TTL 兑底
+    default-ttl: 30m
+    specs:
+      codeblog:system:user: 30m
+      codeblog:system:menu-tree: 10m
+      codeblog:system:role-list: 10m
   security:
     enabled: true
     excludes:

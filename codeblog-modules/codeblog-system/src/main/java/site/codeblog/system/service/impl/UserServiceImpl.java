@@ -6,6 +6,9 @@ import com.mybatisflex.core.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.codeblog.common.core.exception.BusinessException;
@@ -14,6 +17,7 @@ import site.codeblog.common.core.result.PageResult;
 import site.codeblog.redis.core.RedisCache;
 import site.codeblog.security.core.LoginHelper;
 import site.codeblog.security.core.LoginUser;
+import site.codeblog.system.constant.CacheConstants;
 import site.codeblog.system.constant.ErrorCodeConstants;
 import site.codeblog.system.convert.UserConvert;
 import site.codeblog.system.entity.UserPO;
@@ -30,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -58,35 +63,28 @@ public class UserServiceImpl implements UserService {
     private final LoginLogService loginLogService;
     /** 登录事件发布（ObjectProvider：local/关闭时 bean 不存在，零依赖） */
     private final ObjectProvider<LoginEventPublisher> loginEventPublisher;
-
-    // ---- 登录失败锁定（Redis 计数，防暴力破解；key 规范待阶段5 CacheConstants 统一收口） ----
-    private static final String LOGIN_FAIL_COUNT_KEY = "codeblog:system:auth:login-fail:%s";
-    private static final String LOGIN_LOCK_KEY = "codeblog:system:auth:login-lock:%s";
-    /** 失败计数窗口（分钟）：窗口内累计达阈值即锁定 */
-    private static final long FAIL_WINDOW_MINUTES = 10;
-    /** 窗口内允许的最大失败次数 */
-    private static final long MAX_FAILS = 5;
-    /** 锁定时长（分钟） */
-    private static final long LOCK_MINUTES = 10;
-
     private final RedisCache redisCache;
+    private final CacheManager cacheManager;
+
+    // ---- 登录失败锁定（Redis 计数，防暴力破解；key 收口在 CacheConstants） ----
 
     /** 登录前检查锁定状态，已锁定抛 1000007 */
     private void checkLoginLock(String username) {
-        if (Boolean.TRUE.equals(redisCache.hasKey(String.format(LOGIN_LOCK_KEY, username)))) {
+        if (Boolean.TRUE.equals(redisCache.hasKey(String.format(CacheConstants.LOGIN_LOCK_KEY, username)))) {
             throw BusinessException.of(ErrorCodeConstants.LOGIN_LOCKED, "登录失败次数过多，账号已临时锁定，请稍后再试");
         }
     }
 
     /** 登录失败计数，达阈值后锁定并清零计数 */
     private void recordLoginFail(String username) {
-        String countKey = String.format(LOGIN_FAIL_COUNT_KEY, username);
+        String countKey = String.format(CacheConstants.LOGIN_FAIL_COUNT_KEY, username);
         Long fails = redisCache.increment(countKey, 1);
         if (fails != null && fails == 1) {
-            redisCache.expire(countKey, FAIL_WINDOW_MINUTES, TimeUnit.MINUTES);
+            redisCache.expire(countKey, CacheConstants.FAIL_WINDOW_MINUTES, TimeUnit.MINUTES);
         }
-        if (fails != null && fails >= MAX_FAILS) {
-            redisCache.set(String.format(LOGIN_LOCK_KEY, username), "1", LOCK_MINUTES, TimeUnit.MINUTES);
+        if (fails != null && fails >= CacheConstants.MAX_FAILS) {
+            redisCache.set(String.format(CacheConstants.LOGIN_LOCK_KEY, username), "1",
+                    CacheConstants.LOCK_MINUTES, TimeUnit.MINUTES);
             redisCache.delete(countKey);
             log.warn("登录失败锁定：username={}, fails={}", username, fails);
         }
@@ -94,7 +92,15 @@ public class UserServiceImpl implements UserService {
 
     /** 登录成功清零计数（锁定 key 到期自然解除，无需主动清） */
     private void clearLoginFail(String username) {
-        redisCache.delete(String.format(LOGIN_FAIL_COUNT_KEY, username));
+        redisCache.delete(String.format(CacheConstants.LOGIN_FAIL_COUNT_KEY, username));
+    }
+
+    /** 失效某用户的 currentUser 缓存（变更点统一调用；TTL 30 分钟兜底） */
+    private void evictUserCache(Long userId) {
+        Cache cache = cacheManager.getCache(CacheConstants.USER);
+        if (cache != null) {
+            cache.evict(userId);
+        }
     }
 
     @Override
@@ -147,9 +153,12 @@ public class UserServiceImpl implements UserService {
         LoginHelper.logout();
     }
 
+    /**
+     * 当前登录用户信息（缓存旁路：命中直接返回；失效矩阵见变更点 evictUserCache）
+     */
     @Override
-    public UserRespVO currentUser() {
-        Long userId = LoginHelper.getUserId();
+    @Cacheable(cacheNames = CacheConstants.USER, key = "#userId")
+    public UserRespVO currentUser(Long userId) {
         UserPO user = userMapper.selectOneById(userId);
         if (user == null) {
             throw BusinessException.of(GlobalErrorCode.ACCOUNT_NOT_EXIST);
@@ -206,8 +215,7 @@ public class UserServiceImpl implements UserService {
         user.setPassword(BCrypt.hashpw(reqVO.getPassword()));
         user.setStatus(STATUS_ENABLED);
         user.setDelFlag(0);
-        user.setCreateTime(LocalDateTime.now());
-        user.setUpdateTime(LocalDateTime.now());
+        // 审计字段由 AuditListener 自动填充
         userMapper.insert(user);
         return user.getId();
     }
@@ -225,8 +233,12 @@ public class UserServiceImpl implements UserService {
         }
 
         UserPO user = userConvert.convert(reqVO);
-        user.setUpdateTime(LocalDateTime.now());
-        userMapper.update(user);
+        int rows = userMapper.update(user);
+        if (rows == 0) {
+            // 乐观锁冲突（version 不匹配）或记录不存在
+            throw BusinessException.of(GlobalErrorCode.CONFLICT, "数据已被他人修改，请刷新后重试");
+        }
+        evictUserCache(reqVO.getId());
 
         // 停用即吊销全部会话：防止旧 token 凭会话快照继续访问
         if (!Integer.valueOf(STATUS_ENABLED).equals(reqVO.getStatus())) {
@@ -242,6 +254,7 @@ public class UserServiceImpl implements UserService {
         userMapper.deleteById(id);
         // 删号即吊销：token 30 天有效期不等于账号已删后仍可用
         LoginHelper.logoutByUserId(id);
+        evictUserCache(id);
     }
 
     @Override
@@ -249,8 +262,8 @@ public class UserServiceImpl implements UserService {
         UserPO user = new UserPO();
         user.setId(reqVO.getId());
         user.setPassword(BCrypt.hashpw(reqVO.getPassword()));
-        user.setUpdateTime(LocalDateTime.now());
         userMapper.update(user);
+        evictUserCache(reqVO.getId());
         // 重置密码即吊销：旧会话一律失效，凭新密码重新登录
         LoginHelper.logoutByUserId(reqVO.getId());
     }
@@ -283,6 +296,7 @@ public class UserServiceImpl implements UserService {
         userRoleMapper.insertBatch(bindings);
         // 角色变更即吊销：会话权限是登录快照，不吊销则旧权限残留到下次登录
         LoginHelper.logoutByUserId(userId);
+        evictUserCache(userId);
     }
 
     private void requireUserExists(Long userId) {

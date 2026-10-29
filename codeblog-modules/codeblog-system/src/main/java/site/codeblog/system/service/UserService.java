@@ -25,9 +25,9 @@ public interface UserService {
     void logout();
 
     /**
-     * 当前登录用户信息（含角色/权限集合）
+     * 当前登录用户信息（含角色/权限集合；缓存旁路）
      */
-    UserRespVO currentUser();
+    UserRespVO currentUser(Long userId);
 
     /**
      * 分页查询用户
