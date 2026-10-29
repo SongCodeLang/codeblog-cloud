@@ -353,7 +353,6 @@ export default function DictPage() {
         onOk={handleTypeSubmit}
         onCancel={() => setTypeEditorOpen(false)}
         confirmLoading={typeSaveMutation.isPending}
-        destroyOnHidden
       >
         <Form form={typeForm} labelCol={{ span: 6 }}>
           <Form.Item name="dictName" label="字典名称" rules={[{ required: true, message: '请输入字典名称' }]}>
@@ -383,7 +382,7 @@ export default function DictPage() {
         title={`字典项 - ${itemTarget?.dictName ?? ''}（${itemTarget?.dictType ?? ''}）`}
         open={itemTarget !== null}
         onClose={() => setItemTarget(null)}
-        width={720}
+        size="large"
         destroyOnHidden
       >
         <div style={{ marginBottom: 12 }}>
@@ -415,7 +414,6 @@ export default function DictPage() {
         onOk={handleItemSubmit}
         onCancel={() => setItemEditorOpen(false)}
         confirmLoading={itemSaveMutation.isPending}
-        destroyOnHidden
       >
         <Form form={itemForm} labelCol={{ span: 6 }}>
           <Form.Item name="itemLabel" label="字典标签" rules={[{ required: true, message: '请输入字典标签' }]}>

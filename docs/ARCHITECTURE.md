@@ -407,3 +407,4 @@ sql/
   - DictCacheService 不用 @Cacheable 而用 CacheManager 直读直写——getLabel 内部调 getLabelMap 会绕过代理使注解缓存失效
   - 前端 DictPage 更新请求必须带 dictType（Save VO 共用，@NotBlank 校验不区分 create/update），编码/值字段更新时置灰不可改（与服务层"编码/值不可变更"一致）
   - 字典项 label 变更对已缓存的 currentUser（30m TTL）内嵌 statusLabel 最迟 30 分钟收敛（回写发生在查询映射时，缓存值是快照），可接受
+  - **UI 验收补强（本批次收尾）**：首次引入 Playwright 浏览器冒烟（11/11，登录→字典页→F5 刷新存活→字典项抽屉→双弹窗，0 console error，截图目检通过），`npm run build` 全量绿。实测抓到并修复 dev 模式真坑：**vite 代理 `/system` 与 SPA 路由 `/system/*` 命名空间冲突**——刷新/深链被代理成 API 请求（无 token 文档请求返回 401 JSON 当页面渲染，所有管理页 F5 即断），修复为 `bypass` 按路径段数分流（≤2 段=页面路由交回 SPA，≥3 段=API 转网关）；另修 antd v6 Drawer `width` 废弃（→size）、destroyOnHidden 卸载 Form 触发 useForm 未连接警告（去该属性）。冒烟断言教训：react-router 过渡期旧页面仍显示、antd 异步表格/抽屉必须 wait_for_selector，裸 networkidle 会误判
