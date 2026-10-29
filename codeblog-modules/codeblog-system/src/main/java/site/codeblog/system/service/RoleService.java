@@ -6,7 +6,9 @@ import site.codeblog.system.vo.RolePageReqVO;
 import site.codeblog.system.vo.RoleRespVO;
 import site.codeblog.system.vo.RoleUpdateReqVO;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -57,6 +59,11 @@ public interface RoleService {
      * 查询用户的角色权限字符集合（仅启用角色）
      */
     Set<String> getRoleKeysByUserId(Long userId);
+
+    /**
+     * 批量查询多个用户的角色权限字符集合（用户分页列表用，避免逐行 N+1）
+     */
+    Map<Long, Set<String>> getRoleKeyMapByUserIds(Collection<Long> userIds);
 
     /**
      * 查询用户的权限标识集合；admin 角色返回 {"*"}

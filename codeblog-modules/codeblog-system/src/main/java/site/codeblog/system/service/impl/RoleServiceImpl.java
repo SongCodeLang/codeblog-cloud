@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.codeblog.common.core.exception.BusinessException;
 import site.codeblog.common.core.result.PageResult;
+import site.codeblog.security.core.LoginHelper;
 import site.codeblog.system.constant.ErrorCodeConstants;
 import site.codeblog.system.convert.RoleConvert;
 import site.codeblog.system.entity.MenuPO;
@@ -25,10 +26,15 @@ import site.codeblog.system.vo.RoleRespVO;
 import site.codeblog.system.vo.RoleUpdateReqVO;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static site.codeblog.system.entity.table.MenuPOTableDef.MENU_PO;
 import static site.codeblog.system.entity.table.RoleMenuPOTableDef.ROLE_MENU_PO;
@@ -60,6 +66,17 @@ public class RoleServiceImpl implements RoleService {
     private final RoleMenuMapper roleMenuMapper;
     private final UserRoleMapper userRoleMapper;
     private final RoleConvert roleConvert;
+
+    /** 吊销某角色全部绑定用户的会话（角色状态/权限变更后，旧快照权限不可继续生效） */
+    private void revokeRoleUserSessions(Long roleId) {
+        List<Long> userIds = userRoleMapper.selectListByQuery(QueryWrapper.create()
+                        .where(USER_ROLE_PO.ROLE_ID.eq(roleId))).stream()
+                .map(UserRolePO::getUserId).distinct().toList();
+        userIds.forEach(LoginHelper::logoutByUserId);
+        if (!userIds.isEmpty()) {
+            log.info("角色变更已吊销 {} 个用户会话：roleId={}", userIds.size(), roleId);
+        }
+    }
 
     @Override
     public PageResult<RoleRespVO> page(RolePageReqVO reqVO) {
@@ -109,6 +126,8 @@ public class RoleServiceImpl implements RoleService {
         RolePO role = roleConvert.convert(reqVO);
         role.setUpdateTime(LocalDateTime.now());
         roleMapper.update(role);
+        // 角色（含状态/权限字符）变更即吊销绑定用户：会话权限是登录快照
+        revokeRoleUserSessions(reqVO.getId());
     }
 
     @Override
@@ -156,6 +175,8 @@ public class RoleServiceImpl implements RoleService {
             return binding;
         }).toList();
         roleMenuMapper.insertBatch(bindings);
+        // 授权变更即吊销绑定用户：旧快照权限不可继续生效
+        revokeRoleUserSessions(roleId);
     }
 
     @Override
@@ -166,6 +187,32 @@ public class RoleServiceImpl implements RoleService {
             roleKeys.add(role.getRoleKey());
         }
         return roleKeys;
+    }
+
+    @Override
+    public Map<Long, Set<String>> getRoleKeyMapByUserIds(Collection<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<UserRolePO> bindings = userRoleMapper.selectListByQuery(QueryWrapper.create()
+                .where(USER_ROLE_PO.USER_ID.in(userIds)));
+        if (bindings.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<Long, List<Long>> userRoleIds = bindings.stream().collect(Collectors.groupingBy(
+                UserRolePO::getUserId, Collectors.mapping(UserRolePO::getRoleId, Collectors.toList())));
+        List<Long> roleIds = bindings.stream().map(UserRolePO::getRoleId).distinct().toList();
+        Map<Long, RolePO> roleById = roleMapper.selectListByIds(roleIds).stream()
+                .filter(r -> r.getStatus() != null && r.getStatus() == STATUS_ENABLED)
+                .collect(Collectors.toMap(RolePO::getId, r -> r));
+
+        Map<Long, Set<String>> result = new HashMap<>();
+        userRoleIds.forEach((userId, ids) -> result.put(userId, ids.stream()
+                .map(roleById::get)
+                .filter(Objects::nonNull)
+                .map(RolePO::getRoleKey)
+                .collect(Collectors.toCollection(LinkedHashSet::new))));
+        return result;
     }
 
     @Override
