@@ -233,6 +233,7 @@ sql/
 | ADR-6 | 流控熔断采用 Sentinel，规则持久化到 Nacos；网关限流用 Sentinel 网关流控替代 Gateway RequestRateLimiter | SCA 生态原生配套；规则重启不丢；与 Feign 熔断同栈 | 2026-10-28 |
 | ADR-7 | Seata 就绪先行（AT 模式 + undo_log + compose 部署），@GlobalTransactional 待真实跨服务写场景（阶段 8 首验）再启用；单服务多表写一律 @Transactional | 满足"system 服务开发时接入"的要求，同时避免全局事务锁被滥用放大 | 2026-10-28 |
 | ADR-8 | 日志收集选 Grafana Loki + Promtail + Grafana，EFK 为数据量增大后备选；APM（SkyWalking/Zipkin）二期可选 | 当前规模资源占用最小；traceId + Loki 过滤已构成排障闭环 | 2026-10-28 |
+| ADR-9 | RocketMQ 接入采用 SCA Stream binder（版本随 SCA BOM = client 5.3.1），不引入 Apache rocketmq-spring-boot-starter 双体系；不建独立 mq starter（等第二个服务出现再抽）；broker 宿主机直连用 brokerIP1=127.0.0.1 | 与 Sentinel/Seata 同一 SCA 版本治理体系；SC Stream 绑定模型解耦 broker 细节；Docker Desktop 容器 IP 宿主机不可达（同 Seata grouplist 结论） | 2026-10-29 |
 
 ## 11. 阶段进度与回填记录
 
@@ -296,7 +297,15 @@ sql/
   - 已知限制：`uk_role_key(role_key, del_flag)` 下同一 role_key 软删两次会撞唯一键（del_flag 仅 0/1），阶段 5 BaseEntity/审计落地时一并评估（如 del_flag 改存 id 或删除时间戳）
   - 移除了无调用方的 `RoleService.getByRoleKey`（死代码）
 
-## 12. 微服务治理组件与日志收集（阶段 2 / 7 实施依据；2026-10-28 追加）
+#### 2026-10-29 · RocketMQ 追加接入（用户需求，阶段 2 治理组件体系的延伸）
+
+- 产出：SCA Stream binder 接入（依赖随 SCA BOM，无新增版本声明）+ compose 三件套（namesrv/broker/dashboard）+ 登录事件收发用例 + local 降级开关（详见 12.5 节与 ADR-9）
+- 验收实测：登录请求 → 消费者收到登录事件（闭环通）；local 默认启动零 MQ 连接；broker 注册地址 127.0.0.1:10911 宿主机可达
+- 偏差与关键事实：
+  - dashboard 镜像（apache/rocketmq-dashboard:1.1.0）因 Docker Hub 网络超时暂未拉起，compose 定义已就绪，网络恢复后 `docker compose up -d rocketmq-dashboard` 即可
+  - broker store 卷问题与 brokerIP1 问题均为实测踩坑，结论写入 12.5，compose/broker.conf 内有注释
+
+## 12. 微服务治理组件与日志收集（阶段 2 / 7 实施依据；2026-10-28 追加；12.5 RocketMQ 为 2026-10-29 追加）
 
 > 本节回应两条追加需求：①system 子服务开发时接入 Nacos / Sentinel / Seata；②系统与业务日志的收集方案。
 
@@ -338,3 +347,20 @@ sql/
 | L1 应用日志规范 | logback-spring.xml 统一：pattern 含 traceId、按天滚动（app-%d.log 保留 30 天）、error 单独文件、目录 `./logs/{service}/`；web starter 内置默认 + 各服务薄覆盖 | 阶段 4（与 MDC 同批落地） |
 | L2 业务审计日志 | `@Log` 切面 → `sys_oper_log`（操作人/模块/动作/参数/结果/IP/耗时）；`sys_login_log` 登录成败记录；均提供管理端查询接口 | 登录日志随阶段 3；操作日志阶段 6 |
 | L3 集中收集 | **Grafana Loki + Promtail + Grafana** 进 docker-compose：Promtail 采集 `./logs/` 按 {service}/{env} 打标签；Grafana 预置视图——按 traceId 反查全链路日志、按服务/级别/时间过滤（ADR-8）。EFK 为数据量增大后备选；APM（SkyWalking / Micrometer Tracing + Zipkin）二期可选，一期以自研 traceId + Loki 满足排障闭环 | 阶段 7 |
+
+### 12.5 RocketMQ —— 消息队列（2026-10-29 追加接入，ADR-9）
+
+| 事项 | 方案 |
+|---|---|
+| 依赖 | `spring-cloud-starter-stream-rocketmq`（SCA Stream binder，版本随 SCA BOM，内含 rocketmq-client 5.3.1）；不引入 Apache rocketmq-spring-boot-starter，避免双体系 |
+| 选型理由 | 与 Sentinel/Seata 同随 SCA BOM 版本治理；Spring Cloud Stream 绑定模型解耦 broker 细节；仅一个业务服务，暂不抽独立 mq starter（第二个服务出现再抽 codeblog-spring-boot-starter-mq） |
+| 服务端 | compose 三件套：namesrv(9876) + broker(10909/10911) + dashboard(8180)；镜像 `apache/rocketmq:5.3.1` 与客户端严格配套；broker 开发环境 autoCreateTopicEnable=true、异步刷盘 |
+| 编程模型 | 生产者 `StreamBridge.send("loginEvent-out-0", msg)`；消费者 `@Bean Consumer<LoginEventMessage> loginEvent()` → 绑定 `loginEvent-in-0`（destination `codeblog-login-event`，group `codeblog-system`） |
+| 首个用例 | 登录事件：成败双向发布、fire-and-forget 旁路容错（MQ 故障不影响登录）、消费侧日志落地；后续风控/通知/审计挂点 |
+| local 降级 | `codeblog.mq.login-event.enabled=false`（application-local.yml）：条件注解使消费者与发布器 bean 均不注册 → 无消费绑定、零 MQ 连接（实测 local 启动无任何 rocketmq 连接日志） |
+| 验证 | 2026-10-29 实测：登录 → StreamBridge 发送 → broker → 消费者收到「收到登录事件：username=admin, success=true」；local 默认启动零连接 |
+
+**两个实际踩过的坑（均已注释在 compose/broker.conf 内）**：
+
+1. **brokerIP1 必须显式指定 `127.0.0.1`**：默认注册容器 IP，Docker Desktop 下宿主机不可达（同 Seata grouplist 直连理由）；代价是 compose 内部容器互访 broker 受限（dashboard 部分页签可能异常）。
+2. **开发编排不挂 broker store 卷**：命名卷以 root 属主初始化，镜像内 broker 用户（uid 3000）不可写 → broker 静默失败、退出码 255，且 shutdown 路径 NPE 掩盖真实原因；生产挂卷需 `chown 3000:3000`。开发环境存储随容器（重建即清空，与 Seata file 模式同定位）。

@@ -17,3 +17,9 @@ spring:
 seata:
   # 不连 seata-server、关闭数据源代理，保持本地联调轻量
   enabled: false
+
+# RocketMQ 登录事件收发开关：local 下不创建消费者绑定、不发送（bindings 配置保留但无 bean 驱动，零连接）
+codeblog:
+  mq:
+    login-event:
+      enabled: false

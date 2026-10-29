@@ -11,6 +11,18 @@ spring:
       config:
         server-addr: 127.0.0.1:8848
         file-extension: yaml
+    stream:
+      # RocketMQ binder（SCA stream）：登录事件收发（后续业务绑定陆续扩展）
+      bindings:
+        loginEvent-out-0:
+          destination: codeblog-login-event
+        loginEvent-in-0:
+          destination: codeblog-login-event
+          group: codeblog-system
+      rocketmq:
+        binder:
+          # 开发联调直连宿主机端口；生产由 Nacos 配置中心覆盖
+          name-server: 127.0.0.1:9876
     sentinel:
       eager: true
       transport:

@@ -63,6 +63,53 @@ services:
       - "7091:7091"
       - "8091:8091"
 
+  # RocketMQ NameServer（Apache RocketMQ 5.3.1，与 SCA 2025.0.0.0 binder 内的 client 5.3.1 配套）
+  # 开发联调内存受限，显式压缩 JVM 堆（镜像默认 8G）
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.3.1
+    container_name: codeblog-rocketmq-namesrv
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      JAVA_OPT_EXT: "-Xms256m -Xmx256m"
+    command: ["sh", "mqnamesrv"]
+    ports:
+      - "9876:9876"
+
+  # RocketMQ Broker：brokerIP1=127.0.0.1（同 Seata grouplist 理由——容器 IP 宿主机不可达，
+  # 宿主机客户端凭注册地址 127.0.0.1:10911 直连；代价是 compose 内部容器访问 broker 受限）；
+  # autoCreateTopicEnable=true 仅为开发便利，生产环境显式建 topic 并关掉
+  rocketmq-broker:
+    image: apache/rocketmq:5.3.1
+    container_name: codeblog-rocketmq-broker
+    restart: unless-stopped
+    depends_on:
+      - rocketmq-namesrv
+    environment:
+      TZ: Asia/Shanghai
+      JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn128m"
+    command: ["sh", "mqbroker", "-n", "rocketmq-namesrv:9876", "-c", "/home/rocketmq/conf/broker.conf"]
+    volumes:
+      - ./rocketmq/broker.conf:/home/rocketmq/conf/broker.conf:ro
+      # 注：不挂 store 卷——命名卷会以 root 属主初始化，镜像内 broker 用户(uid 3000)不可写导致启动失败；
+      # 开发环境存储随容器（重建即清空）。生产自建编排时挂卷后需 chown 3000:3000 或以 root 运行
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+
+  # RocketMQ 控制台（监控视图定位，同 Sentinel Dashboard）：宿主机访问 http://127.0.0.1:8180
+  rocketmq-dashboard:
+    image: apache/rocketmq-dashboard:1.1.0
+    container_name: codeblog-rocketmq-dashboard
+    restart: unless-stopped
+    depends_on:
+      - rocketmq-namesrv
+    environment:
+      TZ: Asia/Shanghai
+      JAVA_OPTS: "-Drocketmq.namesrv.addr=rocketmq-namesrv:9876"
+    ports:
+      - "8180:8080"
+
 volumes:
   mysql-data:
   redis-data:

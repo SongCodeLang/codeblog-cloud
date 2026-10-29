@@ -5,6 +5,7 @@ import cn.hutool.crypto.digest.BCrypt;
 import com.mybatisflex.core.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.codeblog.common.core.exception.BusinessException;
@@ -17,6 +18,7 @@ import site.codeblog.system.entity.UserPO;
 import site.codeblog.system.entity.UserRolePO;
 import site.codeblog.system.mapper.UserMapper;
 import site.codeblog.system.mapper.UserRoleMapper;
+import site.codeblog.system.mq.LoginEventPublisher;
 import site.codeblog.system.service.LoginLogService;
 import site.codeblog.system.service.RoleService;
 import site.codeblog.system.service.UserService;
@@ -50,6 +52,8 @@ public class UserServiceImpl implements UserService {
     private final UserConvert userConvert;
     private final RoleService roleService;
     private final LoginLogService loginLogService;
+    /** 登录事件发布（ObjectProvider：local/关闭时 bean 不存在，零依赖） */
+    private final ObjectProvider<LoginEventPublisher> loginEventPublisher;
 
     @Override
     public AuthLoginRespVO login(AuthLoginReqVO reqVO) {
@@ -77,6 +81,7 @@ public class UserServiceImpl implements UserService {
             String token = LoginHelper.login(loginUser);
 
             loginLogService.record(user.getUsername(), true, "登录成功");
+            loginEventPublisher.ifAvailable(p -> p.publish(user.getUsername(), true));
             return AuthLoginRespVO.builder()
                     .token(token)
                     .userId(user.getId())
@@ -87,6 +92,7 @@ public class UserServiceImpl implements UserService {
                     .build();
         } catch (BusinessException e) {
             loginLogService.record(reqVO.getUsername(), false, e.getMessage());
+            loginEventPublisher.ifAvailable(p -> p.publish(reqVO.getUsername(), false));
             throw e;
         }
     }

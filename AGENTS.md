@@ -25,7 +25,7 @@
 
 规则：第三方版本只允许在 `codeblog-dependencies/pom.xml`（BOM）中声明，业务与 starter 模块 pom 禁止写版本号。升级任何一个框架前必须先核对兼容矩阵。
 
-微服务治理三件套：Nacos（注册/配置中心）、Sentinel（流控熔断，规则持久化到 Nacos）、Seata（分布式事务，AT 模式）。**local profile 降级约定**：Sentinel 不接 dashboard、Seata 关闭数据源代理，保持本地免外部依赖联调。事务纪律：单服务多表写用 @Transactional，跨服务写才由发起方标注 @GlobalTransactional，禁止滥用。治理设计详见 `docs/ARCHITECTURE.md` 第 12 节。
+微服务治理四件套：Nacos（注册/配置中心）、Sentinel（流控熔断，规则持久化到 Nacos）、Seata（分布式事务，AT 模式）、RocketMQ（消息队列，SCA Stream binder）。**local profile 降级约定**：Sentinel 不接 dashboard、Seata 关闭数据源代理、RocketMQ 关闭登录事件收发（零 MQ 连接），保持本地免外部依赖联调。事务纪律：单服务多表写用 @Transactional，跨服务写才由发起方标注 @GlobalTransactional，禁止滥用。治理设计详见 `docs/ARCHITECTURE.md` 第 12 节。
 
 ## 构建与运行
 

@@ -25,6 +25,7 @@
 | 网关 | Spring Cloud Gateway | 随 Spring Cloud | 路由转发、统一鉴权、CORS |
 | 注册/配置中心 | Nacos | 随 SCA 2025 | 服务发现 + spring.config.import 配置分层 |
 | 流控熔断 | Sentinel | 1.8.9（随 SCA） | 规则 Nacos 持久化 + 网关流控（SCG v6x adapter） |
+| 消息队列 | RocketMQ | 5.3.1（client 随 SCA BOM） | SCA Stream binder；登录事件收发，local 可降级（见架构文档 12.5） |
 | 分布式事务 | Apache Seata | 2.5.0（随 SCA） | AT 模式就绪，跨服务写时启用 @GlobalTransactional |
 | 文档 | Knife4j / SpringDoc | 4.5.0 / 2.8.x | OpenAPI 3 文档 |
 | 工具 | Hutool / Lombok / MapStruct | 5.8.48 / 1.18.42 / 1.6.3 | 工具集 / 简化代码 / 对象映射 |
@@ -82,7 +83,7 @@ codeblog-cloud/
 
 ```bash
 cd docker
-docker compose up -d          # mysql + redis + nacos + sentinel-dashboard(8858) + seata-server(7091/8091)
+docker compose up -d          # mysql + redis + nacos + sentinel-dashboard(8858) + seata-server(7091/8091) + rocketmq(9876/10911/8180)
 ```
 
 > Sentinel 控制台默认账号为官方默认 sentinel/sentinel（可用环境变量 AUTH_PASSWORD 覆盖）；
@@ -155,6 +156,8 @@ npm run dev          # http://localhost:5173（/system 代理到网关 9999）
 | `spring.cloud.sentinel.transport.dashboard` | Sentinel 控制台地址 | 127.0.0.1:8858 |
 | `spring.cloud.sentinel.datasource.*` | 规则数据源（Nacos 持久化，热更新） | flow/degrade/gw-flow |
 | `seata.enabled` | Seata 客户端开关（local profile 降级为 false） | true |
+| `spring.cloud.stream.rocketmq.binder.name-server` | RocketMQ NameServer 地址 | 127.0.0.1:9876 |
+| `codeblog.mq.login-event.enabled` | 登录事件收发开关（local profile 降级为 false，零 MQ 连接） | true |
 | `seata.tx-service-group` | 事务分组 | codeblog_tx_group |
 | `spring.config.import` | Nacos 配置导入（仅非 local profile） | 共享+私有 dataId |
 
