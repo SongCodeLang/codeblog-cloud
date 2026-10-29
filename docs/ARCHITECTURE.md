@@ -316,6 +316,14 @@ sql/
   - G5 生效机制：Boot 的 ErrorWebFluxAutoConfiguration @ConditionalOnMissingBean(ErrorWebExceptionHandler)，自定义 bean 注册后默认处理器自动退位，@Order(-2) 仅作保险
   - 网关日志 traceId 不进 pattern（WebFlux MDC 跨线程不可靠，蓝图已知限制，实证维持）；排查注意：WSL 读 /mnt/c 日志文件有缓存延迟，验证以 Windows 侧 type/grep 为准
 
+#### 2026-10-29 · 安全加固批次（架构评审发现的 P0，不占阶段号）
+
+- 背景：阶段4 后全架构评审发现四项叠加风险集中在你「会话生命周期管理」一条线上，本批次闭环
+- 产出：①会话吊销——删用户/停用/重置密码/分配角色吊销该用户全部会话，角色更新/授权变更吊销该角色全部绑定用户（LoginHelper.logoutByUserId，原全项目仅主动登出一处 logout）；②登录失败锁定——Redis 计数 10 分钟窗口 5 次失败锁 10 分钟（1000007，持续尝试持续刷新锁定，锁定拒绝落审计日志）；③traceId 净化——入站仅信 ^[A-Za-z0-9_-]{8,64}$ 否则重生成（网关/服务双侧，防日志注入）；④sa-token active-timeout -1→3 天无操作过期（双侧同步，收敛 token 泄漏暴露窗口）
+- 同批 perf：用户分页角色改批量查询（N+1 消除，21 SQL→3）
+- 验证：恶意 traceId 被替换/合法透传、锁定双验证、删号后旧 token 401、回归全过
+- 关键事实：锁定/计数 key（codeblog:system:auth:login-*）暂为服务内常量，阶段5 CacheConstants 统一收口；评审其余 P1（DuplicateKeyException/软删撞键/审计字段）已在阶段5 计划内，P2 部署备忘（生产关 springdoc、改默认口令）入 README 部署清单待补
+
 ## 12. 微服务治理组件与日志收集（阶段 2 / 7 实施依据；2026-10-28 追加；12.5 RocketMQ 为 2026-10-29 追加）
 
 > 本节回应两条追加需求：①system 子服务开发时接入 Nacos / Sentinel / Seata；②系统与业务日志的收集方案。
