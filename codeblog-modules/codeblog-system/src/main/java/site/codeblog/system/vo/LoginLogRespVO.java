@@ -43,6 +43,11 @@ public class LoginLogRespVO implements Serializable {
     private Integer status;
 
     /**
+     * 结果展示（字典回写）
+     */
+    private String statusLabel;
+
+    /**
      * 提示消息
      */
     private String msg;

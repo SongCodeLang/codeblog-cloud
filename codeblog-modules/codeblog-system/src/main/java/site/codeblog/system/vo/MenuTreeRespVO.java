@@ -59,6 +59,11 @@ public class MenuTreeRespVO {
     private Integer status;
 
     /**
+     * 状态展示（字典回写）
+     */
+    private String statusLabel;
+
+    /**
      * 子菜单
      */
     private List<MenuTreeRespVO> children = new ArrayList<>();

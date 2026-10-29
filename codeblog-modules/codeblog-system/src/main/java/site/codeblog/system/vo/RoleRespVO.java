@@ -38,6 +38,11 @@ public class RoleRespVO {
     private Integer status;
 
     /**
+     * 状态展示（字典回写）
+     */
+    private String statusLabel;
+
+    /**
      * 备注
      */
     private String remark;

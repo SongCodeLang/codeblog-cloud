@@ -46,6 +46,7 @@ public class MenuServiceImpl implements MenuService {
             node.setIcon(menu.getIcon());
             node.setSortOrder(menu.getSortOrder());
             node.setStatus(menu.getStatus());
+            node.setStatusLabel(menu.getStatusLabel());
             nodeMap.put(menu.getId(), node);
         }
 

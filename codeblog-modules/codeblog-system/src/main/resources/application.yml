@@ -78,6 +78,7 @@ codeblog:
       codeblog:system:user: 30m
       codeblog:system:menu-tree: 10m
       codeblog:system:role-list: 10m
+      codeblog:system:dict: 10m
   security:
     enabled: true
     excludes:

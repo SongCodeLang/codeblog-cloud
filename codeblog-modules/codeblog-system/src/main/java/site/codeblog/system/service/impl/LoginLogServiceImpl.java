@@ -62,6 +62,7 @@ public class LoginLogServiceImpl implements LoginLogService {
         respVO.setIp(po.getIp());
         respVO.setUserAgent(po.getUserAgent());
         respVO.setStatus(po.getStatus());
+        respVO.setStatusLabel(po.getStatusLabel());
         respVO.setMsg(po.getMsg());
         respVO.setLoginTime(po.getLoginTime());
         return respVO;

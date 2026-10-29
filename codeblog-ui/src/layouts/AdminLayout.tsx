@@ -23,6 +23,7 @@ const MENU_ITEMS = [
     children: [
       { key: '/system/users', label: '用户管理', permission: 'system:user:list' },
       { key: '/system/roles', label: '角色管理', permission: 'system:role:list' },
+      { key: '/system/dicts', label: '数据字典', permission: 'system:dict:list' },
     ],
   },
 ]
@@ -33,6 +34,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/system': '系统管理',
   '/system/users': '用户管理',
   '/system/roles': '角色管理',
+  '/system/dicts': '数据字典',
 }
 
 export default function AdminLayout() {

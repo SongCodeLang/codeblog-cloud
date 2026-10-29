@@ -37,6 +37,8 @@ export interface UserInfo {
   createTime?: string
   /** 乐观锁版本号（编辑时回传） */
   version?: number
+  /** 状态展示（字典回写） */
+  statusLabel?: string
   /** 角色权限字符集合 */
   roles?: string[]
   /** 权限标识集合（admin 为 ['*']） */
@@ -105,6 +107,8 @@ export interface RoleInfo {
   createTime?: string
   /** 乐观锁版本号（编辑时回传） */
   version?: number
+  /** 状态展示（字典回写） */
+  statusLabel?: string
 }
 
 /** 角色分页查询参数 */
@@ -144,5 +148,31 @@ export interface MenuTreeItem {
   icon?: string
   sortOrder: number
   status: UserStatus
+  /** 状态展示（字典回写） */
+  statusLabel?: string
   children: MenuTreeItem[]
+}
+
+/** 字典类型 */
+export interface DictType {
+  id: string
+  dictName: string
+  dictType: string
+  status: UserStatus
+  remark?: string
+  version?: number
+  createTime?: string
+}
+
+/** 字典项（前端下拉与管理页共用） */
+export interface DictItem {
+  id: string
+  dictType: string
+  itemLabel: string
+  itemValue: string
+  sortOrder: number
+  status: UserStatus
+  remark?: string
+  version?: number
+  createTime?: string
 }

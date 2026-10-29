@@ -8,6 +8,7 @@ const LoginPage = lazy(() => import('@/pages/login/LoginPage'))
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'))
 const UserPage = lazy(() => import('@/pages/system/UserPage'))
 const RolePage = lazy(() => import('@/pages/system/RolePage'))
+const DictPage = lazy(() => import('@/pages/system/DictPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 /** 路由加载占位 */
@@ -57,6 +58,10 @@ export const router = createBrowserRouter([
       {
         path: 'system/roles',
         element: withSuspense(<RolePage />),
+      },
+      {
+        path: 'system/dicts',
+        element: withSuspense(<DictPage />),
       },
     ],
   },

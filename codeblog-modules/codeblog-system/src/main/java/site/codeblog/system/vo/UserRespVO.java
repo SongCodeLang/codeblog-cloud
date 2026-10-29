@@ -45,6 +45,11 @@ public class UserRespVO {
     private Integer status;
 
     /**
+     * 状态展示（字典回写）
+     */
+    private String statusLabel;
+
+    /**
      * 乐观锁版本号（编辑时回传）
      */
     private Integer version;

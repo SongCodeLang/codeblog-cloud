@@ -29,6 +29,11 @@ public interface CacheConstants {
      */
     String ROLE_LIST = "codeblog:system:role-list";
 
+    /**
+     * 字典数据缓存（value→label 映射，key 为字典类型编码；DictSetListener/前端下拉共用）
+     */
+    String DICT = "codeblog:system:dict";
+
     // ---- 登录失败锁定（状态 key，非缓存；10 分钟窗口 5 次锁 10 分钟） ----
 
     String LOGIN_FAIL_COUNT_KEY = "codeblog:system:auth:login-fail:%s";

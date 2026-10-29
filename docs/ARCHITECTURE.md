@@ -395,3 +395,15 @@ sql/
   - 踩坑②：缓存值含 LocalDateTime 的 VO，CacheManager 的 ObjectMapper 必须注册 jackson-datatype-jsr310，否则写缓存报 "Java 8 date/time type not supported"（RedisTemplate 与 CacheManager 已统一 buildJsonObjectMapper）
   - 踩坑③：sys_user 历史表结构无 create_by/update_by（role/menu 有），BaseEntity 引入后 BadSqlGrammar——增量 SQL 补齐（data_20261029.sql），新表设计应默认带全审计列
   - 软删撞键（uk+del_flag）按评审决策不改，DuplicateKey 409 兜底后无 500，限制保持记录
+
+#### 2026-10-29 · 数据字典能力（用户需求，阶段 6 前追加批次）
+
+- 背景：确认项目无数据字典能力（字典仅存在于 system 服务职责描述），按用户要求补齐，实现方案采用 MyBatis-Flex 官方「字典回写」机制（columns-dict.html 的 SetListener）
+- 产出：①表结构 sys_dict_type/sys_dict_item（全审计列+version，增量 dict_20261029.sql 已随本批次并入 init.sql）+ 种子（sys_common_status/sys_login_status）+ 菜单权限（id=600 段，管理页同批开放）；②Flex 字典回写——`@DictLabel` 注解 + `DictSetListener`（@Table(onSet=...)，字段 set/查询映射时从字典缓存取 label 回写 `xxxLabel` 展示字段，注解元数据按类缓存，经 SpringContextHolder 取 bean，回写失败仅告警不影响主流程）+ `DictCacheService`（CacheManager 直读直写防自调用绕代理，TTL 10m）；落地点 UserPO/RolePO/MenuPO/LoginLogPO 的 status → statusLabel，VO/前端透出，用户/角色列表状态列改用回写标签；③字典管理 CRUD（类型/项，权限 system:dict:*，字典项变更 evict 缓存）+ `/dict/data/{type}` 下拉数据源（登录即可）+ 前端 DictPage（类型表格+字典项抽屉）
+- 设计要点：官方示例是硬编码 switch，本项目 label 映射源改为字典表（可运维）；字典实体自身禁止挂 @DictLabel 自引用（回写触发缓存加载自身会无限递归，实测设计期规避）
+- 验收实测：24/24——查询自动带 statusLabel（用户/角色/菜单/登录日志）、改字典标签→用户页回写联动即时生效（缓存失效矩阵实证）、CRUD 闭环+重复值 1000012+删类型有项拒绝 1000010+乐观锁 409、p3test 管理 403/下拉可用、常规回归
+- **关键发现（软删撞键实锤）**：字典表初版含 uk(dict_type, item_value, del_flag)，验收中「同值删→重建→再删」第二次软删必撞墓碑键报 DuplicateKey——阶段 5 记录的"等真出现再改"限制在字典场景（值复用为高频操作）必现。处置：字典表去 DB 唯一键（服务层查重 + 409 兜底，RuoYi 字典表同款无 uk）；sys_user/sys_role 存量 uk 维持已知限制；教训固化为 AGENTS 已知坑 10（新表禁止把 del_flag 放进唯一键）
+- 偏差与关键事实：
+  - DictCacheService 不用 @Cacheable 而用 CacheManager 直读直写——getLabel 内部调 getLabelMap 会绕过代理使注解缓存失效
+  - 前端 DictPage 更新请求必须带 dictType（Save VO 共用，@NotBlank 校验不区分 create/update），编码/值字段更新时置灰不可改（与服务层"编码/值不可变更"一致）
+  - 字典项 label 变更对已缓存的 currentUser（30m TTL）内嵌 statusLabel 最迟 30 分钟收敛（回写发生在查询映射时，缓存值是快照），可接受

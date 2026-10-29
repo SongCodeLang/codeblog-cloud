@@ -44,4 +44,29 @@ public interface ErrorCodeConstants {
      */
     int LOGIN_LOCKED = 1_000_007;
 
+    /**
+     * 字典类型不存在
+     */
+    int DICT_TYPE_NOT_FOUND = 1_000_008;
+
+    /**
+     * 字典类型编码已存在
+     */
+    int DICT_TYPE_DUPLICATE = 1_000_009;
+
+    /**
+     * 字典类型下存在字典项，禁止删除
+     */
+    int DICT_TYPE_IN_USE = 1_000_010;
+
+    /**
+     * 字典项不存在
+     */
+    int DICT_ITEM_NOT_FOUND = 1_000_011;
+
+    /**
+     * 同一字典类型下字典值已存在
+     */
+    int DICT_ITEM_DUPLICATE = 1_000_012;
+
 }

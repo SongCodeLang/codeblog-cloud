@@ -82,6 +82,7 @@ docker/                  基础设施编排（mysql/redis/nacos/sentinel-dashboa
 7. `.flattened-pom.xml` 已被 git 忽略，勿提交
 8. **Spring Data Redis 3.5 的 SerializationPair 在 RedisSerializationContext 嵌套**（非 RedisSerializer 内部）；且缓存值含 LocalDateTime 时 ObjectMapper 必须注册 jackson-datatype-jsr310，否则写 Redis 报 "Java 8 date/time type not supported"（redis starter 的 buildJsonObjectMapper 已统一处理，勿另建序列化器）
 9. **实体继承 BaseEntity 后，表必须有全部审计列**（create_by/create_time/update_by/update_time）+ 对应 version 列（若 PO 声明 @Column(version=true)），否则 BadSqlGrammar——新表设计默认带全审计列，参考 sys_role
+10. **含 del_flag 的唯一键在同 key 二次软删时必撞键**（如 uk(item, del_flag)：删→重建→再删，第二次软删与墓碑冲突报 DuplicateKey）——新表禁止把 del_flag 放进唯一键，唯一性用服务层查重（字典表已按此落地，RuoYi 同款无 uk）；sys_user/sys_role 的存量 uk 按已知限制保留
 
 ## 安全红线
 

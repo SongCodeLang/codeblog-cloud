@@ -1,9 +1,12 @@
 package site.codeblog.system.entity;
 
+import com.mybatisflex.annotation.Column;
 import com.mybatisflex.annotation.Id;
 import com.mybatisflex.annotation.KeyType;
 import com.mybatisflex.annotation.Table;
 import lombok.Data;
+import site.codeblog.system.dict.DictLabel;
+import site.codeblog.system.dict.DictSetListener;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -15,7 +18,7 @@ import java.time.LocalDateTime;
  * @author codeblog
  */
 @Data
-@Table("sys_login_log")
+@Table(value = "sys_login_log", onSet = DictSetListener.class)
 public class LoginLogPO implements Serializable {
 
     @Serial
@@ -45,7 +48,14 @@ public class LoginLogPO implements Serializable {
     /**
      * 结果：0 成功，1 失败
      */
+    @DictLabel("sys_login_status")
     private Integer status;
+
+    /**
+     * 结果展示（字典回写，非数据库字段）
+     */
+    @Column(ignore = true)
+    private String statusLabel;
 
     /**
      * 提示消息

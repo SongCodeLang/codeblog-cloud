@@ -205,8 +205,12 @@ export default function RolePage() {
       title: '状态',
       dataIndex: 'status',
       width: 90,
-      render: (status: UserStatus) =>
-        status === 0 ? <Tag color="success">启用</Tag> : <Tag color="error">停用</Tag>,
+      render: (status: UserStatus, record: RoleInfo) =>
+        status === 0 ? (
+          <Tag color="success">{record.statusLabel ?? '启用'}</Tag>
+        ) : (
+          <Tag color="error">{record.statusLabel ?? '停用'}</Tag>
+        ),
     },
     { title: '备注', dataIndex: 'remark', ellipsis: true },
     { title: '创建时间', dataIndex: 'createTime', width: 170 },
