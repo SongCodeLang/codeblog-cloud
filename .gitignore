@@ -54,3 +54,5 @@ build/
 
 ### Mac OS ###
 .DS_Store
+# pi 项目记忆隔离启动器（本地工具，勿提交）
+/pi.cmd
