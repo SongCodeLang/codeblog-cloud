@@ -32,4 +32,10 @@ export const userApi = {
 
   resetPassword: (data: UserResetPasswordParams) =>
     request<void>({ url: '/system/user/reset-password', method: 'PUT', data }),
+
+  roleIds: (userId: string) =>
+    request<string[]>({ url: `/system/user/role-ids/${userId}`, method: 'GET' }),
+
+  assignRoles: (userId: string, roleIds: string[]) =>
+    request<void>({ url: `/system/user/assign-roles/${userId}`, method: 'PUT', data: roleIds }),
 }

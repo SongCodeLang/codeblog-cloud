@@ -137,7 +137,7 @@ npm run dev          # http://localhost:5173（/system 代理到网关 9999）
 
 - 登录：`POST /system/auth/login` 返回 `token`
 - 后续请求携带请求头 `Authorization: Bearer <token>`（网关统一校验，Redis 共享会话）
-- 响应统一为 `Result<T>`：`{ code, message, data, timestamp }`，`code=200` 成功，`401` 未登录
+- 响应统一为 `Result<T>`：`{ code, message, data, timestamp }`，`code=200` 成功，`401` 未登录，`403` 无权限（RBAC）
 - 后端 `Long` 统一序列化为字符串，避免 JS 精度丢失（前端已适配）
 
 ## 🔧 组件配置速查

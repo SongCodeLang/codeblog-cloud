@@ -7,6 +7,7 @@ const AdminLayout = lazy(() => import('@/layouts/AdminLayout'))
 const LoginPage = lazy(() => import('@/pages/login/LoginPage'))
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'))
 const UserPage = lazy(() => import('@/pages/system/UserPage'))
+const RolePage = lazy(() => import('@/pages/system/RolePage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 /** 路由加载占位 */
@@ -52,6 +53,10 @@ export const router = createBrowserRouter([
       {
         path: 'system/users',
         element: withSuspense(<UserPage />),
+      },
+      {
+        path: 'system/roles',
+        element: withSuspense(<RolePage />),
       },
     ],
   },

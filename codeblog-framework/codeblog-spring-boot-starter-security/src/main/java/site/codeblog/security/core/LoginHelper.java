@@ -62,6 +62,18 @@ public final class LoginHelper {
     }
 
     /**
+     * 按登录 ID 获取会话中的登录用户（会话不存在返回 null）。
+     * 供 StpInterface 注解鉴权回调使用（入参是 loginId 而非当前线程）。
+     */
+    public static LoginUser getLoginUserByLoginId(Object loginId) {
+        SaSession session = StpUtil.getSessionByLoginId(loginId, false);
+        if (session == null) {
+            return null;
+        }
+        return (LoginUser) session.get(LOGIN_USER_KEY);
+    }
+
+    /**
      * 获取当前登录用户 ID（未登录抛出 NotLoginException）
      */
     public static Long getUserId() {

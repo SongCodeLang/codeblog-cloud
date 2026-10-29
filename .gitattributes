@@ -1,0 +1,7 @@
+# 统一 LF：index 已是 LF，防编辑器/智能体写 CRLF 造成全文件假差异
+# 二进制文件由 text=auto 自动跳过
+* text=auto eol=lf
+
+# Windows 专用脚本（如有）保持 CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf

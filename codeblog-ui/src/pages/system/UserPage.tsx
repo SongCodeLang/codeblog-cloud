@@ -16,8 +16,10 @@ import {
 } from 'antd'
 import { useEffect, useState } from 'react'
 import { userApi } from '@/api/user'
+import { roleApi } from '@/api/role'
 import { ApiError } from '@/api/http'
-import type { UserInfo, UserPageQuery, UserStatus } from '@/types/api'
+import type { RoleInfo, UserInfo, UserPageQuery, UserStatus } from '@/types/api'
+import { hasPerm } from '@/utils/perm'
 
 /** 用户查询表单值 */
 interface SearchFormValues {
@@ -53,6 +55,11 @@ export default function UserPage() {
   // 重置密码弹窗
   const [resetTarget, setResetTarget] = useState<UserInfo | null>(null)
   const [resetForm] = Form.useForm<{ password: string }>()
+
+  // 分配角色弹窗
+  const [roleTarget, setRoleTarget] = useState<UserInfo | null>(null)
+  const [roleOptions, setRoleOptions] = useState<RoleInfo[]>([])
+  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([])
 
   const { data, isFetching } = useQuery({
     queryKey: [...USER_QUERY_KEY, query],
@@ -101,6 +108,28 @@ export default function UserPage() {
     },
     onError: (error) => showError(error, '重置失败'),
   })
+
+  const assignRolesMutation = useMutation({
+    mutationFn: ({ userId, roleIds }: { userId: string; roleIds: string[] }) =>
+      userApi.assignRoles(userId, roleIds),
+    onSuccess: () => {
+      message.success('角色已更新')
+      setRoleTarget(null)
+    },
+    onError: (error) => showError(error, '分配角色失败'),
+  })
+
+  // 打开分配角色弹窗：并行拉取启用角色与用户当前绑定
+  const openAssignRoles = async (record: UserInfo) => {
+    setRoleTarget(record)
+    try {
+      const [roles, currentIds] = await Promise.all([roleApi.list(), userApi.roleIds(record.id)])
+      setRoleOptions(roles)
+      setSelectedRoleIds(currentIds)
+    } catch (error) {
+      showError(error, '查询角色信息失败')
+    }
+  }
 
   const handleSearch = () => {
     const values = searchForm.getFieldsValue()
@@ -181,26 +210,46 @@ export default function UserPage() {
     },
     { title: '创建时间', dataIndex: 'createTime', width: 170 },
     {
+      title: '角色',
+      dataIndex: 'roles',
+      width: 120,
+      render: (roles?: string[]) =>
+        (roles ?? []).length > 0
+          ? roles!.map((role) => <Tag key={role} color="blue">{role}</Tag>)
+          : <Tag>无</Tag>,
+    },
+    {
       title: '操作',
       key: 'action',
-      width: 220,
+      width: 260,
       render: (_: unknown, record: UserInfo) => (
         <Space size={4}>
-          <Button type="link" size="small" onClick={() => openEdit(record)}>
-            编辑
-          </Button>
-          <Button type="link" size="small" onClick={() => setResetTarget(record)}>
-            重置密码
-          </Button>
-          <Popconfirm
-            title="确认删除该用户？"
-            description={`将删除用户「${record.nickname}」，删除后不可恢复`}
-            onConfirm={() => deleteMutation.mutate(record.id)}
-          >
-            <Button type="link" size="small" danger>
-              删除
+          {hasPerm('system:user:update') && (
+            <Button type="link" size="small" onClick={() => openEdit(record)}>
+              编辑
             </Button>
-          </Popconfirm>
+          )}
+          {hasPerm('system:user:assign-role') && (
+            <Button type="link" size="small" onClick={() => openAssignRoles(record)}>
+              分配角色
+            </Button>
+          )}
+          {hasPerm('system:user:reset-password') && (
+            <Button type="link" size="small" onClick={() => setResetTarget(record)}>
+              重置密码
+            </Button>
+          )}
+          {hasPerm('system:user:delete') && (
+            <Popconfirm
+              title="确认删除该用户？"
+              description={`将删除用户「${record.nickname}」，删除后不可恢复`}
+              onConfirm={() => deleteMutation.mutate(record.id)}
+            >
+              <Button type="link" size="small" danger>
+                删除
+              </Button>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -244,9 +293,11 @@ export default function UserPage() {
       {/* 用户表格 */}
       <Card size="small">
         <div style={{ marginBottom: 12 }}>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            新增用户
-          </Button>
+          {hasPerm('system:user:create') && (
+            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+              新增用户
+            </Button>
+          )}
         </div>
         <Table<UserInfo>
           rowKey="id"
@@ -354,6 +405,31 @@ export default function UserPage() {
             <Input.Password placeholder="6~32 位" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 分配角色弹窗 */}
+      <Modal
+        title={`分配角色 - ${roleTarget?.username ?? ''}`}
+        open={roleTarget !== null}
+        onOk={() =>
+          roleTarget &&
+          assignRolesMutation.mutate({ userId: roleTarget.id, roleIds: selectedRoleIds })
+        }
+        confirmLoading={assignRolesMutation.isPending}
+        onCancel={() => setRoleTarget(null)}
+        destroyOnHidden
+      >
+        <Select
+          mode="multiple"
+          placeholder="选择角色（admin 为内置超管，不建议下发）"
+          style={{ width: '100%' }}
+          value={selectedRoleIds}
+          onChange={setSelectedRoleIds}
+          options={roleOptions.map((role) => ({
+            value: role.id,
+            label: `${role.roleName}（${role.roleKey}）`,
+          }))}
+        />
       </Modal>
     </div>
   )

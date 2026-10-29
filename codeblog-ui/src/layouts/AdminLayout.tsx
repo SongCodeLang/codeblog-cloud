@@ -5,21 +5,25 @@ import {
   UserOutlined,
 } from '@ant-design/icons'
 import { App, Avatar, Breadcrumb, Dropdown, Layout, Menu, theme } from 'antd'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
+import { hasPerm } from '@/utils/perm'
 
 const { Header, Sider, Content, Footer } = Layout
 
-/** 侧边菜单项定义 */
+/** 侧边菜单项定义（permission 为空表示登录即可见） */
 const MENU_ITEMS = [
   { key: '/dashboard', icon: <DashboardOutlined />, label: '工作台' },
   {
     key: '/system',
     icon: <TeamOutlined />,
     label: '系统管理',
-    children: [{ key: '/system/users', label: '用户管理' }],
+    children: [
+      { key: '/system/users', label: '用户管理', permission: 'system:user:list' },
+      { key: '/system/roles', label: '角色管理', permission: 'system:role:list' },
+    ],
   },
 ]
 
@@ -28,6 +32,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard': '工作台',
   '/system': '系统管理',
   '/system/users': '用户管理',
+  '/system/roles': '角色管理',
 }
 
 export default function AdminLayout() {
@@ -35,8 +40,35 @@ export default function AdminLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { message } = App.useApp()
-  const { user, clearAuth } = useAuthStore()
+  const { user, clearAuth, setUser, setPermissions } = useAuthStore()
   const { token: themeToken } = theme.useToken()
+
+  // 每次进入后台刷新用户信息与权限集合（角色调整后刷新页面即生效）
+  useEffect(() => {
+    authApi
+      .me()
+      .then((info) => {
+        setUser({ userId: info.id, username: info.username, nickname: info.nickname })
+        setPermissions(info.permissions ?? [])
+      })
+      .catch(() => {
+        // 401 已由拦截器统一处理，此处静默
+      })
+  }, [setUser, setPermissions])
+
+  // 按权限过滤侧栏：子项全部无权限时隐藏整个目录
+  const menuItems = useMemo(() => {
+    return MENU_ITEMS.map((item) => {
+      if (!('children' in item) || !item.children) {
+        return item
+      }
+      const children = item.children.filter((child) => hasPerm(child.permission))
+      if (children.length === 0) {
+        return null
+      }
+      return { ...item, children }
+    }).filter(Boolean)
+  }, [])
 
   const selectedKeys = [location.pathname]
   const breadcrumbPaths = location.pathname.split('/').filter(Boolean)
@@ -85,7 +117,7 @@ export default function AdminLayout() {
           mode="inline"
           selectedKeys={selectedKeys}
           defaultOpenKeys={['/system']}
-          items={MENU_ITEMS}
+          items={menuItems}
           onClick={({ key }) => navigate(key)}
         />
       </Sider>

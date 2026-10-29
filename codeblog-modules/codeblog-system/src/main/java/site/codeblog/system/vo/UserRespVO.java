@@ -3,6 +3,8 @@ package site.codeblog.system.vo;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * 用户信息响应
@@ -46,5 +48,15 @@ public class UserRespVO {
      * 创建时间
      */
     private LocalDateTime createTime;
+
+    /**
+     * 角色权限字符集合（admin 角色用户为 {"admin"}）
+     */
+    private Set<String> roles = new LinkedHashSet<>();
+
+    /**
+     * 权限标识集合（admin 角色用户为 {"*"}，前端据此做按钮/页面级控制）
+     */
+    private Set<String> permissions = new LinkedHashSet<>();
 
 }

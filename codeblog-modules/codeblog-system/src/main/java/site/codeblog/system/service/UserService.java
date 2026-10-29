@@ -3,6 +3,8 @@ package site.codeblog.system.service;
 import site.codeblog.common.core.result.PageResult;
 import site.codeblog.system.vo.*;
 
+import java.util.List;
+
 /**
  * 用户服务接口
  *
@@ -13,7 +15,7 @@ public interface UserService {
     /**
      * 登录
      *
-     * @return token 与用户基础信息
+     * @return token 与用户基础信息（含角色/权限集合）
      */
     AuthLoginRespVO login(AuthLoginReqVO reqVO);
 
@@ -23,7 +25,7 @@ public interface UserService {
     void logout();
 
     /**
-     * 当前登录用户信息
+     * 当前登录用户信息（含角色/权限集合）
      */
     UserRespVO currentUser();
 
@@ -58,5 +60,15 @@ public interface UserService {
      * 重置用户密码
      */
     void resetPassword(UserResetPasswordReqVO reqVO);
+
+    /**
+     * 查询用户已绑定的角色 ID 列表
+     */
+    List<Long> getRoleIds(Long userId);
+
+    /**
+     * 覆盖式保存用户的角色绑定
+     */
+    void assignRoles(Long userId, List<Long> roleIds);
 
 }

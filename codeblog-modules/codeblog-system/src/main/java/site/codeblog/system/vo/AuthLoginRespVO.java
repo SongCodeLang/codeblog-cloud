@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 /**
  * 登录响应
  *
@@ -35,5 +38,17 @@ public class AuthLoginRespVO {
      * 昵称
      */
     private String nickname;
+
+    /**
+     * 角色权限字符集合
+     */
+    @Builder.Default
+    private Set<String> roles = new LinkedHashSet<>();
+
+    /**
+     * 权限标识集合（admin 为 {"*"}）
+     */
+    @Builder.Default
+    private Set<String> permissions = new LinkedHashSet<>();
 
 }

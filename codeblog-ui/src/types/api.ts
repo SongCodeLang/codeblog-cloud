@@ -34,6 +34,10 @@ export interface UserInfo {
   mobile?: string
   status: UserStatus
   createTime?: string
+  /** 角色权限字符集合 */
+  roles?: string[]
+  /** 权限标识集合（admin 为 ['*']） */
+  permissions?: string[]
 }
 
 /** 登录请求参数 */
@@ -48,6 +52,10 @@ export interface LoginResult {
   userId: string
   username: string
   nickname: string
+  /** 角色权限字符集合 */
+  roles?: string[]
+  /** 权限标识集合（admin 为 ['*']） */
+  permissions?: string[]
 }
 
 /** 用户分页查询参数 */
@@ -79,4 +87,53 @@ export interface UserUpdateParams {
 export interface UserResetPasswordParams {
   id: string
   password: string
+}
+
+/** 角色信息 */
+export interface RoleInfo {
+  id: string
+  roleName: string
+  roleKey: string
+  sortOrder: number
+  status: UserStatus
+  remark?: string
+  createTime?: string
+}
+
+/** 角色分页查询参数 */
+export interface RolePageQuery extends Partial<PageParam> {
+  roleName?: string
+  roleKey?: string
+  status?: UserStatus
+}
+
+/** 创建角色参数 */
+export interface RoleCreateParams {
+  roleName: string
+  roleKey: string
+  sortOrder?: number
+  status?: UserStatus
+  remark?: string
+}
+
+/** 更新角色参数 */
+export interface RoleUpdateParams extends RoleCreateParams {
+  id: string
+}
+
+/** 菜单类型：1 目录，2 菜单，3 按钮 */
+export type MenuType = '1' | '2' | '3'
+
+/** 菜单树节点 */
+export interface MenuTreeItem {
+  id: string
+  parentId: string
+  menuName: string
+  menuType: MenuType
+  permission?: string
+  path?: string
+  icon?: string
+  sortOrder: number
+  status: UserStatus
+  children: MenuTreeItem[]
 }
