@@ -39,4 +39,9 @@ public interface ErrorCodeConstants {
      */
     int BUILT_IN_ROLE = 1_000_006;
 
+    /**
+     * 登录失败次数过多，账号已锁定
+     */
+    int LOGIN_LOCKED = 1_000_007;
+
 }

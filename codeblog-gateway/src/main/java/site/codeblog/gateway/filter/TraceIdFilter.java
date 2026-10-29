@@ -11,6 +11,7 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * 链路追踪过滤器（G1）：入口生成/透传 X-Trace-Id
@@ -37,10 +38,15 @@ public class TraceIdFilter implements WebFilter {
      */
     public static final String ATTR_TRACE_ID = "codeblog.traceId";
 
+    /**
+     * 入站 traceId 只信规范格式（防日志注入/污染），否则重新生成
+     */
+    private static final Pattern TRACE_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]{8,64}$");
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String traceId = exchange.getRequest().getHeaders().getFirst(TRACE_HEADER);
-        if (StrUtil.isBlank(traceId)) {
+        if (StrUtil.isBlank(traceId) || !TRACE_ID_PATTERN.matcher(traceId).matches()) {
             traceId = UUID.randomUUID().toString().replace("-", "");
         }
 

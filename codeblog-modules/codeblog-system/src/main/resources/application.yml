@@ -66,7 +66,7 @@ sa-token:
   token-name: Authorization
   token-prefix: Bearer
   timeout: 2592000
-  active-timeout: -1
+  active-timeout: 259200  # 3 天无操作过期（安全加固：token 泄漏的最大暴露窗口）
   is-concurrent: true
   is-log: false
 

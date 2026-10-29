@@ -40,6 +40,14 @@ public final class LoginHelper {
     }
 
     /**
+     * 吊销指定用户的全部会话（删号/停用/重置密码/权限变更后调用，
+     * 防止旧会话凭快照权限继续访问）
+     */
+    public static void logoutByUserId(Object loginId) {
+        StpUtil.logout(loginId);
+    }
+
+    /**
      * 获取当前登录用户（未登录抛出 NotLoginException）
      */
     public static LoginUser getLoginUser() {

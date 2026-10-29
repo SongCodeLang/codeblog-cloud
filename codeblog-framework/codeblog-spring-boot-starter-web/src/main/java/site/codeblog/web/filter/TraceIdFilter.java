@@ -9,6 +9,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * 链路追踪 MDC 过滤器（S1，服务侧最前）
@@ -31,11 +32,16 @@ public class TraceIdFilter extends OncePerRequestFilter {
      */
     public static final String MDC_TRACE_ID = "traceId";
 
+    /**
+     * 入站 traceId 只信规范格式（防日志注入/污染），否则自生成（兼容服务直连无头场景）
+     */
+    private static final Pattern TRACE_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]{8,64}$");
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String traceId = request.getHeader(TRACE_HEADER);
-        if (traceId == null || traceId.isBlank()) {
+        if (traceId == null || !TRACE_ID_PATTERN.matcher(traceId).matches()) {
             traceId = UUID.randomUUID().toString().replace("-", "");
         }
         MDC.put(MDC_TRACE_ID, traceId);

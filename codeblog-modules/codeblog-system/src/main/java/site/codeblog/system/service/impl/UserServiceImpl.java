@@ -11,8 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 import site.codeblog.common.core.exception.BusinessException;
 import site.codeblog.common.core.result.GlobalErrorCode;
 import site.codeblog.common.core.result.PageResult;
+import site.codeblog.redis.core.RedisCache;
 import site.codeblog.security.core.LoginHelper;
 import site.codeblog.security.core.LoginUser;
+import site.codeblog.system.constant.ErrorCodeConstants;
 import site.codeblog.system.convert.UserConvert;
 import site.codeblog.system.entity.UserPO;
 import site.codeblog.system.entity.UserRolePO;
@@ -27,7 +29,9 @@ import site.codeblog.system.vo.*;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static site.codeblog.system.entity.table.UserPOTableDef.USER_PO;
 import static site.codeblog.system.entity.table.UserRolePOTableDef.USER_ROLE_PO;
@@ -55,9 +59,48 @@ public class UserServiceImpl implements UserService {
     /** 登录事件发布（ObjectProvider：local/关闭时 bean 不存在，零依赖） */
     private final ObjectProvider<LoginEventPublisher> loginEventPublisher;
 
+    // ---- 登录失败锁定（Redis 计数，防暴力破解；key 规范待阶段5 CacheConstants 统一收口） ----
+    private static final String LOGIN_FAIL_COUNT_KEY = "codeblog:system:auth:login-fail:%s";
+    private static final String LOGIN_LOCK_KEY = "codeblog:system:auth:login-lock:%s";
+    /** 失败计数窗口（分钟）：窗口内累计达阈值即锁定 */
+    private static final long FAIL_WINDOW_MINUTES = 10;
+    /** 窗口内允许的最大失败次数 */
+    private static final long MAX_FAILS = 5;
+    /** 锁定时长（分钟） */
+    private static final long LOCK_MINUTES = 10;
+
+    private final RedisCache redisCache;
+
+    /** 登录前检查锁定状态，已锁定抛 1000007 */
+    private void checkLoginLock(String username) {
+        if (Boolean.TRUE.equals(redisCache.hasKey(String.format(LOGIN_LOCK_KEY, username)))) {
+            throw BusinessException.of(ErrorCodeConstants.LOGIN_LOCKED, "登录失败次数过多，账号已临时锁定，请稍后再试");
+        }
+    }
+
+    /** 登录失败计数，达阈值后锁定并清零计数 */
+    private void recordLoginFail(String username) {
+        String countKey = String.format(LOGIN_FAIL_COUNT_KEY, username);
+        Long fails = redisCache.increment(countKey, 1);
+        if (fails != null && fails == 1) {
+            redisCache.expire(countKey, FAIL_WINDOW_MINUTES, TimeUnit.MINUTES);
+        }
+        if (fails != null && fails >= MAX_FAILS) {
+            redisCache.set(String.format(LOGIN_LOCK_KEY, username), "1", LOCK_MINUTES, TimeUnit.MINUTES);
+            redisCache.delete(countKey);
+            log.warn("登录失败锁定：username={}, fails={}", username, fails);
+        }
+    }
+
+    /** 登录成功清零计数（锁定 key 到期自然解除，无需主动清） */
+    private void clearLoginFail(String username) {
+        redisCache.delete(String.format(LOGIN_FAIL_COUNT_KEY, username));
+    }
+
     @Override
     public AuthLoginRespVO login(AuthLoginReqVO reqVO) {
         try {
+            checkLoginLock(reqVO.getUsername());
             UserPO user = userMapper.selectOneByQuery(QueryWrapper.create()
                     .where(USER_PO.USERNAME.eq(reqVO.getUsername())));
             if (user == null || !BCrypt.checkpw(reqVO.getPassword(), user.getPassword())) {
@@ -81,6 +124,7 @@ public class UserServiceImpl implements UserService {
             String token = LoginHelper.login(loginUser);
 
             loginLogService.record(user.getUsername(), true, "登录成功");
+            clearLoginFail(user.getUsername());
             loginEventPublisher.ifAvailable(p -> p.publish(user.getUsername(), true));
             return AuthLoginRespVO.builder()
                     .token(token)
@@ -92,6 +136,7 @@ public class UserServiceImpl implements UserService {
                     .build();
         } catch (BusinessException e) {
             loginLogService.record(reqVO.getUsername(), false, e.getMessage());
+            recordLoginFail(reqVO.getUsername());
             loginEventPublisher.ifAvailable(p -> p.publish(reqVO.getUsername(), false));
             throw e;
         }
@@ -124,11 +169,14 @@ public class UserServiceImpl implements UserService {
                 .orderBy(USER_PO.ID.desc());
 
         var page = userMapper.paginate(reqVO.getPageNo(), reqVO.getPageSize(), query);
+        // 角色批量查询：两条 IN 拿全页角色，避免逐行 N+1
+        Map<Long, Set<String>> roleKeyMap = roleService.getRoleKeyMapByUserIds(
+                page.getRecords().stream().map(UserPO::getId).toList());
         List<UserRespVO> list = page.getRecords().stream()
                 .map(po -> {
                     UserRespVO respVO = userConvert.convert(po);
                     // 列表仅展示角色标识，权限集合不查（/auth/me 提供）
-                    respVO.setRoles(roleService.getRoleKeysByUserId(po.getId()));
+                    respVO.setRoles(roleKeyMap.getOrDefault(po.getId(), Set.of()));
                     return respVO;
                 })
                 .toList();
@@ -179,6 +227,11 @@ public class UserServiceImpl implements UserService {
         UserPO user = userConvert.convert(reqVO);
         user.setUpdateTime(LocalDateTime.now());
         userMapper.update(user);
+
+        // 停用即吊销全部会话：防止旧 token 凭会话快照继续访问
+        if (!Integer.valueOf(STATUS_ENABLED).equals(reqVO.getStatus())) {
+            LoginHelper.logoutByUserId(reqVO.getId());
+        }
     }
 
     @Override
@@ -187,6 +240,8 @@ public class UserServiceImpl implements UserService {
             throw BusinessException.of(GlobalErrorCode.BUSINESS_FAILED, "不能删除当前登录账号");
         }
         userMapper.deleteById(id);
+        // 删号即吊销：token 30 天有效期不等于账号已删后仍可用
+        LoginHelper.logoutByUserId(id);
     }
 
     @Override
@@ -196,6 +251,8 @@ public class UserServiceImpl implements UserService {
         user.setPassword(BCrypt.hashpw(reqVO.getPassword()));
         user.setUpdateTime(LocalDateTime.now());
         userMapper.update(user);
+        // 重置密码即吊销：旧会话一律失效，凭新密码重新登录
+        LoginHelper.logoutByUserId(reqVO.getId());
     }
 
     @Override
@@ -224,6 +281,8 @@ public class UserServiceImpl implements UserService {
             return binding;
         }).toList();
         userRoleMapper.insertBatch(bindings);
+        // 角色变更即吊销：会话权限是登录快照，不吊销则旧权限残留到下次登录
+        LoginHelper.logoutByUserId(userId);
     }
 
     private void requireUserExists(Long userId) {
